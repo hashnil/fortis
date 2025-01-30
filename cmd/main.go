@@ -10,6 +10,20 @@ import (
 	api "github.com/dfns/dfns-sdk-go/dfnsapiclient"
 )
 
+type WalletResponse struct {
+	ID          string `json:"id"`
+	Network     string `json:"network"`
+	Status      string `json:"status"`
+	Name        string `json:"name"`
+	Address     string `json:"address"`
+	DateCreated string `json:"dateCreated"`
+	SigningKey  struct {
+		Curve     string `json:"curve"`
+		Scheme    string `json:"scheme"`
+		PublicKey string `json:"publicKey"`
+	} `json:"signingKey"`
+}
+
 func main() {
 	conf := &credentials.AsymmetricKeySignerConfig{
 		PrivateKey: `-----BEGIN PRIVATE KEY-----
@@ -50,7 +64,7 @@ V701scoVOM+NNsLxjmTV42SVOQ==
 	apiOptions, err := api.NewDfnsAPIOptions(&api.DfnsAPIConfig{
 		AppID:     "ap-25rpo-57vo9-9e0bpihml41c1di8", // ID of the Application registered with DFNS
 		AuthToken: &authToken,                        // an auth token
-		BaseURL:   "https://app.dfns.io",             // base Url of DFNS API
+		BaseURL:   "https://api.dfns.io",             // base Url of DFNS API
 	}, signer)
 	if err != nil {
 		fmt.Printf("Error creating DfnsApiOptions: %s", err)
@@ -60,10 +74,10 @@ V701scoVOM+NNsLxjmTV42SVOQ==
 	dfnsClient := api.CreateDfnsAPIClient(apiOptions)
 
 	// Create wallet
-	walletData := struct {
-		Network string `json:"network"`
-	}{
-		Network: "EthereumGoerli",
+	walletData := map[string]interface{}{
+		"network":         "EthereumGoerli",
+		"name":            "my-wallet",
+		"delayDelegation": true,
 	}
 
 	jsonData, err := json.Marshal(walletData)
@@ -83,5 +97,19 @@ V701scoVOM+NNsLxjmTV42SVOQ==
 		fmt.Printf("error creating wallet: %v", err)
 		return
 	}
-	fmt.Println("Response: ", response)
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusCreated {
+		fmt.Printf("API error: %s\n", response.Status)
+		return
+	}
+
+	var wallet WalletResponse
+	err = json.NewDecoder(response.Body).Decode(&wallet)
+	if err != nil {
+		fmt.Printf("error decoding JSON response: %v", err)
+		return
+	}
+
+	fmt.Printf("Wallet Created: %+v\n", wallet)
 }
