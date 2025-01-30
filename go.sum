@@ -1,0 +1,4 @@
+github.com/dfns/dfns-sdk-go v0.0.2-beta h1:DMYaNd8A9hCJM3/nSJ+riGyB8zAy82CNwVShD1sSyIk=
+github.com/dfns/dfns-sdk-go v0.0.2-beta/go.mod h1:z2buur/InnpeeZzr+fN+j/6Db+E2RAXENk8/rTfXTDE=
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
