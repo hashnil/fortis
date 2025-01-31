@@ -1,4 +1,4 @@
-module wallet-service
+module fortis
 
 go 1.23.4
 
