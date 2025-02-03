@@ -13,11 +13,6 @@ import (
 )
 
 var (
-	APP_ID        = viper.GetString("wallet.dfns.app_id")
-	AUTH_TOKEN    = viper.GetString("wallet.dfns.auth_token")
-	BASE_URL      = viper.GetString("wallet.dfns.base_url")
-	CREDENTIAL_ID = viper.GetString("wallet.dfns.credential_id")
-
 	DFNS_PRIVATE_KEY []byte
 
 	configPath = "./infrastructure/config/"
@@ -91,4 +86,20 @@ func fetchSecretFromGCP(secretName string) (string, error) {
 	}
 
 	return string(result.Payload.Data), nil
+}
+
+func GetAppID() string {
+	return viper.GetString("wallet.dfns.app_id")
+}
+
+func GetAuthToken() string {
+	return viper.GetString("wallet.dfns.auth_token")
+}
+
+func GetBaseURL() string {
+	return viper.GetString("wallet.dfns.base_url")
+}
+
+func GetCredentialID() string {
+	return viper.GetString("wallet.dfns.credential_id")
 }

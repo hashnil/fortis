@@ -12,18 +12,19 @@ import (
 	api "github.com/dfns/dfns-sdk-go/dfnsapiclient"
 )
 
-func APIClient[T any](request *T, httpMethod, URL string) (*T, error) {
+func APIClient[T any](request interface{}, httpMethod, URL string) (*T, error) {
 	// Configure credentials for authentication
 	conf := &credentials.AsymmetricKeySignerConfig{
 		PrivateKey: string(config.DFNS_PRIVATE_KEY), // DFNS Credential Private Key
-		CredID:     config.CREDENTIAL_ID,            // DFNS Credential ID
+		CredID:     config.GetCredentialID(),        // DFNS Credential ID
 	}
 
 	// Create a DFNS API client instance with authentication
+	authToken := config.GetAuthToken()
 	apiOptions, err := api.NewDfnsAPIOptions(&api.DfnsAPIConfig{
-		AppID:     config.APP_ID,      // DFNS Application ID
-		AuthToken: &config.AUTH_TOKEN, // Authentication Token
-		BaseURL:   config.BASE_URL,    // DFNS API Base URL
+		AppID:     config.GetAppID(),   // DFNS Application ID
+		AuthToken: &authToken,          // Authentication Token
+		BaseURL:   config.GetBaseURL(), // DFNS API Base URL
 	}, credentials.NewAsymmetricKeySigner(conf))
 	if err != nil {
 		return nil, fmt.Errorf("error creating DFNS API options: %w", err)
