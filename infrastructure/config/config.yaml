@@ -1,0 +1,17 @@
+service:
+  port: 8080
+prometheus:
+  port: 9090
+db:
+  postgres:
+    user: "postgres"
+    pass: "System12"
+    name: "postgres"
+    host: "localhost"
+    port: 5432
+wallet:
+  dfns:
+    app_id: "ap-25rpo-57vo9-9e0bpihml41c1di8"
+    auth_token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.eyJpc3MiOiJhdXRoLmRmbnMuaW8iLCJhdWQiOiJkZm5zOmF1dGg6dXNlciIsInN1YiI6Im9yLTcyamI3LWo5ZjNsLTk0cDl0NmlzcW9ybWpwczUiLCJqdGkiOiJ0by02bW9iZS1lbDZoNC05Nmw5Ymx1Y3I3a2htbGNqIiwiaHR0cHM6Ly9jdXN0b20vdXNlcm5hbWUiOiJTZXJ2aWNlIEFjY291bnQgMiIsImh0dHBzOi8vY3VzdG9tL2FwcF9tZXRhZGF0YSI6eyJ1c2VySWQiOiJ1cy03cjVzYS01MHJ2dS05aWM5MG82azhhMDRvb3RnIiwib3JnSWQiOiJvci03MmpiNy1qOWYzbC05NHA5dDZpc3Fvcm1qcHM1IiwidG9rZW5LaW5kIjoiU2VydmljZUFjY291bnQifSwiaWF0IjoxNzM4MjQ4MzE1LCJleHAiOjE4MDEzMjAzMTV9.e8JisHmSNfthg4ufRAPME-mNPPbKr76SmYfySwavedWA5tCf2HoX240OANxC2dRR8xoYsouxlSjxfWUguOLOBA"
+    base_url: "https://api.dfns.io"
+    credential_id: "Y2ktYzhxanQtZmYzYzgtaWtvNjRlbnJzZGE3cGpy"
