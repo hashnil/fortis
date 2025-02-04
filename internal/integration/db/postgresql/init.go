@@ -3,6 +3,7 @@ package postgresql
 import (
 	"fmt"
 	"fortis/internal/integration/db"
+	dbmodel "fortis/internal/integration/db/models"
 	"log"
 
 	"github.com/spf13/viper"
@@ -27,10 +28,10 @@ func NewPostgresClient() (db.Client, error) {
 		return &PostgresSQLClient{}, err
 	}
 
-	// Create the user table if it does not exist
-	// if err := db.AutoMigrate(&model.User{}); err != nil {
-	// 	return &PostgresSQLClient{}, fmt.Errorf("error creating tables: %v", err)
-	// }
+	// Create the wallet table if it does not exist
+	if err := db.AutoMigrate(&dbmodel.Wallet{}); err != nil {
+		return &PostgresSQLClient{}, fmt.Errorf("error creating tables: %v", err)
+	}
 
 	log.Println("Postgres SQL client initialized successfully.")
 	return &PostgresSQLClient{client: db}, nil
