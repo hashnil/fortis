@@ -6,8 +6,7 @@ import (
 	dbmodel "fortis/internal/integration/db/models"
 	"log"
 
-	"github.com/spf13/viper"
-	"gorm.io/driver/postgres"
+	"github.com/getpanda/commons/db/postgresql/dsn"
 	"gorm.io/gorm"
 )
 
@@ -16,14 +15,8 @@ type PostgresSQLClient struct {
 }
 
 func NewPostgresClient() (db.Client, error) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		viper.GetString("db.postgres.host"),
-		viper.GetString("db.postgres.user"),
-		viper.GetString("db.postgres.pass"),
-		viper.GetString("db.postgres.name"),
-		viper.GetString("db.postgres.port"),
-	)
-	db, err := gorm.Open(postgres.Open(dsn))
+	// Initialize the PostgresSQLClient from commons
+	db, err := dsn.ConnectWithConnectorGorm()
 	if err != nil {
 		return &PostgresSQLClient{}, err
 	}

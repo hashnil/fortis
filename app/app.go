@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -22,10 +23,10 @@ var (
 // NewService initializes the Service struct, sets up the Gin engine, and registers routes.
 func NewService() (*Service, error) {
 	healthController := controller.NewHealthController()
-	walletController := controller.NewWalletController()
-	// if err != nil {
-	// 	return &Service{}, fmt.Errorf("unable to create controller: %v", err)
-	// }
+	walletController, err := controller.NewWalletController()
+	if err != nil {
+		return &Service{}, fmt.Errorf("unable to create controller: %v", err)
+	}
 
 	// Ensure the engine is initialized only once
 	if engine == nil {

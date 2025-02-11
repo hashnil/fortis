@@ -7,8 +7,9 @@ import (
 	"os"
 	"strings"
 
-	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/spf13/viper"
 )
 
@@ -21,7 +22,7 @@ var (
 // LoadConfig loads the application configuration.
 func LoadConfig() error {
 	// Check the environment to determine config source
-	if os.Getenv("ENV") == "" {
+	if os.Getenv("ENV") == "develop" {
 		// Load configuration from local YAML file
 		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
@@ -38,8 +39,8 @@ func LoadConfig() error {
 			return fmt.Errorf("failed to read key.pem: %v", err)
 		}
 	} else {
-		// Fetch configuration from Google Secret Manager
-		configYAML, err := fetchSecretFromGCP(constants.APP_CONFIG_SECRET)
+		// Fetch configuration from AWS Secret Manager
+		configYAML, err := fetchSecretFromAWS(constants.APP_CONFIG_SECRET)
 		if err != nil {
 			return fmt.Errorf("failed to fetch secret: %v", err)
 		}
@@ -49,8 +50,8 @@ func LoadConfig() error {
 			return fmt.Errorf("failed to parse secret `%s`: %v", constants.APP_CONFIG_SECRET, err)
 		}
 
-		// Fetch DFNS Private Key from Google Secret Manager
-		dfnsPvtKey, err := fetchSecretFromGCP(constants.DFNS_PVT_KEY_SECRET)
+		// Fetch DFNS Private Key from AWS Secret Manager
+		dfnsPvtKey, err := fetchSecretFromAWS(constants.DFNS_PVT_KEY_SECRET)
 		if err != nil {
 			return fmt.Errorf("failed to fetch secret `%s`: %v", constants.DFNS_PVT_KEY_SECRET, err)
 		}
@@ -64,28 +65,29 @@ func LoadConfig() error {
 	return nil
 }
 
-// fetchSecretFromGCP fetches the secret from Google Secret Manager
-func fetchSecretFromGCP(secretName string) (string, error) {
+// fetchSecretFromAWS fetches the secret from AWS Secrets Manager
+func fetchSecretFromAWS(secretName string) (string, error) {
 	ctx := context.Background()
-	client, err := secretmanager.NewClient(ctx)
+
+	// Load AWS configuration
+	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to create secret manager client: %v", err)
-	}
-	defer client.Close()
-
-	// Construct the secret version name (e.g., "projects/<project-id>/secrets/<secret-name>/versions/latest")
-	secretVersion := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", constants.PROJECT_ID, secretName)
-	req := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: secretVersion,
+		return "", fmt.Errorf("failed to load AWS config: %v", err)
 	}
 
-	// Retrieve the secret
-	result, err := client.AccessSecretVersion(ctx, req)
+	client := secretsmanager.NewFromConfig(cfg)
+
+	// Request to get the secret value
+	req := &secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(secretName),
+	}
+
+	result, err := client.GetSecretValue(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("failed to access secret: %v", err)
+		return "", fmt.Errorf("failed to retrieve secret `%s`: %v", secretName, err)
 	}
 
-	return string(result.Payload.Data), nil
+	return aws.ToString(result.SecretString), nil
 }
 
 func GetAppID() string {

@@ -15,5 +15,5 @@ func registerRoutes(healthController *controller.HealthController, walletControl
 	apiV1 := engine.Group(fmt.Sprintf("/api/%s/wallet", constants.API_VERSION_V1))
 
 	// Wallet access routes
-	apiV1.POST("/:provider/create", walletController.CreateWallet)
+	apiV1.POST("/create", walletController.CreateWallet)
 }
