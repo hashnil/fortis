@@ -1,12 +1,9 @@
 package instrumentation
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-)
+	"fortis/entity/constants"
 
-const (
-	handler = "handler"
-	status  = "status"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -16,21 +13,21 @@ var (
 			Name: "http_request_total",
 			Help: "Total number of http requests",
 		},
-		[]string{handler},
+		[]string{constants.Handler},
 	)
 	SuccessRequestCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "http_success_request_total",
 			Help: "Total number of successful http requests",
 		},
-		[]string{handler},
+		[]string{constants.Handler},
 	)
 	FailureRequestCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "http_failed_request_total",
 			Help: "Total number of failed http requests",
 		},
-		[]string{handler, status},
+		[]string{constants.Handler, constants.Status},
 	)
 
 	// Prometheus HistogramVec for tracking the latency of HTTP requests in seconds.
@@ -40,7 +37,7 @@ var (
 			Help:    "Latency of the successful HTTP requests in seconds",
 			Buckets: prometheus.ExponentialBuckets(0.01, 2, 10),
 		},
-		[]string{handler},
+		[]string{constants.Handler},
 	)
 	FailureLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -48,6 +45,6 @@ var (
 			Help:    "Latency of the failed HTTP requests in seconds",
 			Buckets: prometheus.ExponentialBuckets(0.01, 2, 10),
 		},
-		[]string{handler, status},
+		[]string{constants.Handler, constants.Status},
 	)
 )

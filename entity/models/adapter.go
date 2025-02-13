@@ -6,4 +6,5 @@ type WalletRequest struct {
 }
 
 type WalletResponse struct {
+	Result string `json:"result"`
 }
