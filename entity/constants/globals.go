@@ -10,6 +10,10 @@ const (
 	APP_CONFIG_SECRET   = "APP_CONFIG"
 	DFNS_PVT_KEY_SECRET = "DFNS_PVT_KEY"
 
-	// Factory constants
+	// DB Factory constants
 	PostgreSQL = "postgresql"
+
+	// Wallet Provider Factory constants
+	DFNS     = "dfns"
+	Coinbase = "coinbase"
 )

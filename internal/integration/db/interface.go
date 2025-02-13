@@ -6,6 +6,6 @@ import (
 
 type Client interface {
 	FindUserWallet(userID string) (models.Wallet, error)
-	FindWalletByNetwork(userID, network string) (models.Wallet, error)
+	FindWalletByNetwork(userID, provider, network string) (models.Wallet, error)
 	CreateWallet(models.Wallet) error
 }

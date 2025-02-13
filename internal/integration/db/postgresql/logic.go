@@ -22,9 +22,9 @@ func (db *PostgresSQLClient) FindUserWallet(userID string) (models.Wallet, error
 }
 
 // FindWalletByNetwork retrieves a wallet for a given user and network.
-func (db *PostgresSQLClient) FindWalletByNetwork(userID, network string) (models.Wallet, error) {
+func (db *PostgresSQLClient) FindWalletByNetwork(userID, provider, network string) (models.Wallet, error) {
 	var wallet models.Wallet
-	err := db.client.Where("user_id = ? AND network = ?", userID, network).First(&wallet).Error
+	err := db.client.Where("user_id = ? AND provider = ? AND network = ?", userID, provider, network).First(&wallet).Error
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

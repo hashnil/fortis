@@ -2,8 +2,9 @@ package constants
 
 const (
 	// Network constants
-	Solana = "Solana"
-	Base   = "Base"
+	// TODO: move to mainnets
+	Solana = "SolanaDevnet"
+	Base   = "BaseSepolia"
 
 	// ID prefixes
 	UserPrefix   = "us-"
