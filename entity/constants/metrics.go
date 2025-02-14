@@ -4,5 +4,5 @@ const (
 	Handler = "handler"
 	Status  = "status"
 
-	CreateWalletsHandler = "create_wallets"
+	CreateWalletsHandlerV1 = "create_wallets_v1"
 )

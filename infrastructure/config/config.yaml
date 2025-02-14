@@ -16,3 +16,6 @@ wallet:
     auth_token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.eyJpc3MiOiJhdXRoLmRmbnMuaW8iLCJhdWQiOiJkZm5zOmF1dGg6dXNlciIsInN1YiI6Im9yLTRhdXR1LTJlbTNzLThsY3EyNWRxbDgzZ2U3bnUiLCJqdGkiOiJ0by00bm9rci0xM2Q4Yy05b2JyYTlmM3FraW5lY2c2IiwiaHR0cHM6Ly9jdXN0b20vdXNlcm5hbWUiOiJTZXJ2aWNlIEFjY291bnQiLCJodHRwczovL2N1c3RvbS9hcHBfbWV0YWRhdGEiOnsidXNlcklkIjoidXMtMXJtajAta29ucDItOGswYWplaTlpMzl0YzdlbyIsIm9yZ0lkIjoib3ItNGF1dHUtMmVtM3MtOGxjcTI1ZHFsODNnZTdudSIsInRva2VuS2luZCI6IlNlcnZpY2VBY2NvdW50In0sImlhdCI6MTczODc3OTIxNSwiZXhwIjoxODAxODUxMjE1fQ.Gz2qu5d4J_Hi9JG4jjqN3qW6GOe-J2Ct3nc3vFmFetX_JHvGpHzwYmDM-Dw71ix6Z7EKhut6yGeE6aEhnQpVCA"
     base_url: "https://api.dfns.io"
     credential_id: "Y2ktNHFyZm4tOHZtbTctODFtcG1odjdlMGVkcG9paA"
+    networks:
+      - "SolanaDevnet"
+      - "BaseSepolia"

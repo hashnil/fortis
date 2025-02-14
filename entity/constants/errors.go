@@ -4,5 +4,6 @@ const (
 	InvalidRequestParser = "Failed to parse request body"
 	InvalidRequest       = "Invalid Request Body"
 
-	ErrCreateWallet = "Failed to create wallet"
+	ErrInvalidProvider = "Invalid wallet provider"
+	ErrCreateWallet    = "Failed to create wallet"
 )

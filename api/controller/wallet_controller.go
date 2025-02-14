@@ -17,8 +17,8 @@ import (
 )
 
 type WalletController struct {
-	dbClient       db.Client // Database client for user operations.
-	walletProvider wallet.Provider
+	dbClient            db.Client       // Database client for user operations.
+	firstWalletProvider wallet.Provider // Wallet provider for wallet operations: DFNS
 }
 
 func NewWalletController() (*WalletController, error) {
@@ -35,32 +35,42 @@ func NewWalletController() (*WalletController, error) {
 	}
 
 	return &WalletController{
-		dbClient:       dbClient,
-		walletProvider: dfnsWalletProvider,
+		dbClient:            dbClient,
+		firstWalletProvider: dfnsWalletProvider,
 	}, nil
 }
 
-func (c *WalletController) CreateWallet(ctx *gin.Context) {
+func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	// Record API counter and start time for instrumentation.
 	startTime := time.Now()
-	instrumentation.RequestCounter.WithLabelValues(constants.CreateWalletsHandler).Inc()
+	instrumentation.RequestCounter.WithLabelValues(constants.CreateWalletsHandlerV1).Inc()
 
 	var requestBody models.WalletRequest
-	if !utils.BindRequest(ctx, &requestBody, constants.CreateWalletsHandler, startTime) {
+	if !utils.BindRequest(ctx, &requestBody, constants.CreateWalletsHandlerV1, startTime) {
+		return
+	}
+
+	var walletProvider wallet.Provider
+	switch ctx.Param("provider") {
+	case constants.DFNS:
+		walletProvider = c.firstWalletProvider
+	default:
+		utils.HandleError(ctx, http.StatusBadRequest,
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.CreateWalletsHandlerV1, startTime)
 		return
 	}
 
 	// Create wallet for the user
-	_, err := c.walletProvider.CreateWallet(&requestBody)
+	_, err := walletProvider.CreateWallet(&requestBody)
 	if err != nil {
 		utils.HandleError(ctx, http.StatusInternalServerError,
-			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.CreateWalletsHandler, startTime)
+			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.CreateWalletsHandlerV1, startTime)
 		return
 	}
 
 	// Return aggregated results
 	log.Println("Wallets successfully created for user: " + requestBody.Username)
-	instrumentation.SuccessRequestCounter.WithLabelValues(constants.CreateWalletsHandler).Inc()
-	instrumentation.SuccessLatency.WithLabelValues(constants.CreateWalletsHandler).Observe(time.Since(startTime).Seconds())
+	instrumentation.SuccessRequestCounter.WithLabelValues(constants.CreateWalletsHandlerV1).Inc()
+	instrumentation.SuccessLatency.WithLabelValues(constants.CreateWalletsHandlerV1).Observe(time.Since(startTime).Seconds())
 	ctx.JSON(http.StatusOK, models.WalletResponse{Result: constants.SUCCESS})
 }

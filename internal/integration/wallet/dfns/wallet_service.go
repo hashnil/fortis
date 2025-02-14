@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"fortis/entity/constants"
 	"fortis/entity/models"
+	"fortis/infrastructure/config"
 	"fortis/internal/integration/db"
 	dbmodels "fortis/internal/integration/db/models"
 	"fortis/internal/integration/wallet"
@@ -30,9 +31,7 @@ func (p *DFNSWalletProvider) CreateWallet(request *models.WalletRequest) (*model
 	}
 
 	// Create wallets for specified networks (if they don’t exist)
-	networks := []string{constants.Solana, constants.Base}
-
-	for _, network := range networks {
+	for _, network := range config.GetNetworks() {
 		_, err := p.createOrFetchWallet(*request, *userResponse, network)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create or fetch wallet for chain %s: %w", network, err)

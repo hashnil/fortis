@@ -105,3 +105,7 @@ func GetBaseURL() string {
 func GetCredentialID() string {
 	return viper.GetString("wallet.dfns.credential_id")
 }
+
+func GetNetworks() []string {
+	return viper.GetStringSlice("wallet.dfns.networks")
+}
