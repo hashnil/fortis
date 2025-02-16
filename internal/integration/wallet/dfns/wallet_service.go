@@ -44,7 +44,7 @@ func (p *DFNSWalletProvider) CreateWallet(request *models.WalletRequest) (*model
 // registerOrFetchUser checks if the user exists in the database or registers a new user in DFNS.
 func (p *DFNSWalletProvider) registerOrFetchUser(request models.WalletRequest) (*models.DFNSUserRegistrationResponse, error) {
 	// Check if user exists in DB
-	user, err := p.dbClient.FindUserWallet(constants.UserPrefix + request.UserID)
+	user, err := p.dbClient.FindUserWallet(request.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check user %s in DB: %w", request.UserID, err)
 	}

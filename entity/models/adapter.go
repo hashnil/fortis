@@ -1,7 +1,7 @@
 package models
 
 type WalletRequest struct {
-	UserID   string `json:"user_id,omitempty"`
+	UserID   string `json:"user_id,omitempty"` // with prefix: us-
 	Username string `json:"username"`
 }
 
