@@ -43,11 +43,28 @@ type DFNSUserRegistrationResponse struct {
 	} `json:"authenticatorSelection"`
 }
 
+// DFNSWebhookRequest represents the request to register a webhook.
+type DFNSWebhookRequest struct {
+	URL         string   `json:"url"`
+	Description string   `json:"description"`
+	Events      []string `json:"events"`
+}
+
+// DFNSWebhookResponse represents the response from webhook registration.
+type DFNSWebhookResponse struct {
+	ID          string   `json:"id"`
+	URL         string   `json:"url"`
+	Description string   `json:"description"`
+	Events      []string `json:"events"`
+	Status      string   `json:"status"`
+	Secret      string   `json:"secret"`
+}
+
 // DFNSWalletRequest represents the request structure for creating a new wallet in DFNS.
 type DFNSWalletRequest struct {
-	Network    string `json:"network"`
-	Name       string `json:"name"`
-	DelegateTo string `json:"delegateTo"`
+	Network         string `json:"network"`
+	Name            string `json:"name"`
+	DelayDelegation bool   `json:"delayDelegation"`
 }
 
 // DFNSWalletResponse represents the response received after creating a wallet in DFNS.
@@ -67,12 +84,11 @@ type DFNSWalletResponse struct {
 
 // DFNSTransactionRequest represents the request payload for initiating a blockchain transaction.
 type DFNSTransactionRequest struct {
-	Kind       string `json:"kind"`
-	Contract   string `json:"contract,omitempty"` // From account for EVM chains
-	Mint       string `json:"mint,omitempty"`     // From account for Solana chain
-	To         string `json:"to"`
-	Amount     string `json:"amount"`
-	ExternalID string `json:"externalID"`
+	Kind     string `json:"kind"`
+	Contract string `json:"contract,omitempty"` // From account for EVM chains
+	Mint     string `json:"mint,omitempty"`     // From account for Solana chain
+	To       string `json:"to"`
+	Amount   string `json:"amount"`
 }
 
 // DFNSTransactionResponse represents the response received after processing a transaction.

@@ -21,8 +21,8 @@ func NewPostgresClient() (db.Client, error) {
 		return &PostgresSQLClient{}, err
 	}
 
-	// Create the wallet table if it does not exist
-	if err := db.AutoMigrate(&dbmodel.Wallet{}); err != nil {
+	// Create the tables if it does not exist
+	if err := db.AutoMigrate(&dbmodel.Wallet{}, &dbmodel.TransactionLog{}); err != nil {
 		return &PostgresSQLClient{}, fmt.Errorf("error creating tables: %v", err)
 	}
 

@@ -40,10 +40,10 @@ func (db *PostgresSQLClient) CreateWallet(wallet models.Wallet) error {
 	return db.client.Create(&wallet).Error
 }
 
-// GetWalletByUsername retrieves the first wallet for a given username.
-func (db *PostgresSQLClient) GetWalletByUsername(username string) (models.Wallet, error) {
+// GetWalletByUsername retrieves the first wallet for a given username, network and provider.
+func (db *PostgresSQLClient) GetWalletByUsername(username, provider, network string) (models.Wallet, error) {
 	var wallet models.Wallet
-	err := db.client.Where("username = ?", username).First(&wallet).Error
+	err := db.client.Where("username = ? AND provider = ? AND network = ?", username, provider, network).First(&wallet).Error
 	return wallet, err
 }
 

@@ -87,9 +87,9 @@ func (p *DFNSWalletProvider) createOrFetchWallet(
 
 	// Wallet not found, create a new wallet in DFNS
 	walletRequest := &models.DFNSWalletRequest{
-		Network:    network,
-		Name:       fmt.Sprintf("%s-%s-wallet", internalUserData.Username, network),
-		DelegateTo: dfnsUserData.User.ID,
+		Network:         network,
+		Name:            fmt.Sprintf("%s-%s-wallet", internalUserData.Username, network),
+		DelayDelegation: true,
 	}
 
 	walletResponse, err := APIClient[models.DFNSWalletResponse](walletRequest, "POST", "/wallets")
