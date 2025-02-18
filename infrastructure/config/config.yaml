@@ -19,3 +19,5 @@ wallet:
     networks:
       - "SolanaDevnet"
       - "BaseSepolia"
+    asset_transfer:
+      primary_network: "SolanaDevnet"

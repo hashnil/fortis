@@ -39,3 +39,15 @@ func (db *PostgresSQLClient) FindWalletByNetwork(userID, provider, network strin
 func (db *PostgresSQLClient) CreateWallet(wallet models.Wallet) error {
 	return db.client.Create(&wallet).Error
 }
+
+// GetWalletByUsername retrieves the first wallet for a given username.
+func (db *PostgresSQLClient) GetWalletByUsername(username string) (models.Wallet, error) {
+	var wallet models.Wallet
+	err := db.client.Where("username = ?", username).First(&wallet).Error
+	return wallet, err
+}
+
+// CreateTransactionLog stores a transaction log entry in the database.
+func (db *PostgresSQLClient) CreateTransactionLog(transactionLog models.TransactionLog) error {
+	return db.client.Create(&transactionLog).Error
+}
