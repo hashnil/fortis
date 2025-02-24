@@ -1,8 +1,20 @@
 package models
 
+type CreateUserRequest struct {
+	UserID   string `json:"user_id,omitempty"` // with prefix: us-
+	Username string `json:"username"`
+}
+
+type CreateUserResponse struct {
+	Result                  string `json:"result"`
+	ExistingUser            bool   `json:"existing_user,omitempty"`
+	Challenge               string `json:"challenge,omitempty"`
+	TempAuthenticationToken string `json:"temp_auth_token,omitempty"`
+}
+
 type WalletRequest struct {
 	UserID   string `json:"user_id,omitempty"` // with prefix: us-
-	Username string `json:"username,omitempty"`
+	Username string `json:"username"`
 }
 
 type WalletResponse struct {

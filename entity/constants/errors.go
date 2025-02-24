@@ -6,4 +6,6 @@ const (
 
 	ErrInvalidProvider = "Invalid wallet provider"
 	ErrCreateWallet    = "Failed to create wallet"
+	ErrCreateUser      = "Failed to create user"
+	ErrExistingUser    = "User already exists"
 )

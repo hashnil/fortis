@@ -40,6 +40,50 @@ func NewWalletController() (*WalletController, error) {
 	}, nil
 }
 
+func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
+	// Record API counter and start time for instrumentation.
+	startTime := time.Now()
+	instrumentation.RequestCounter.WithLabelValues(constants.RegisterUserHandlerV1).Inc()
+
+	var requestBody models.CreateUserRequest
+	if !utils.BindRequest(ctx, &requestBody, constants.RegisterUserHandlerV1, startTime) {
+		return
+	}
+
+	var walletProvider wallet.Provider
+	switch ctx.Param("provider") {
+	case constants.DFNS:
+		walletProvider = c.firstWalletProvider
+	default:
+		utils.HandleError(ctx, http.StatusBadRequest,
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.RegisterUserHandlerV1, startTime)
+		return
+	}
+
+	// Create delegated user
+	userResponse, err := walletProvider.RegisterDelegatedUser(&requestBody)
+	if err != nil {
+		utils.HandleError(ctx, http.StatusInternalServerError,
+			constants.ErrCreateUser, constants.ErrCreateUser, err, constants.RegisterUserHandlerV1, startTime)
+		return
+	}
+
+	// User already present
+	if userResponse.ExistingUser {
+		utils.HandleError(ctx, http.StatusConflict,
+			constants.ErrExistingUser, constants.ErrExistingUser, err, constants.RegisterUserHandlerV1, startTime)
+	}
+
+	// Return aggregated results
+	log.Println("Delegated user created successfully for: " + requestBody.Username)
+	instrumentation.SuccessRequestCounter.WithLabelValues(constants.RegisterUserHandlerV1).Inc()
+	instrumentation.SuccessLatency.WithLabelValues(constants.RegisterUserHandlerV1).Observe(time.Since(startTime).Seconds())
+	ctx.JSON(http.StatusOK, models.CreateUserResponse{
+		Result:                  constants.SUCCESS,
+		Challenge:               userResponse.Challenge,
+		TempAuthenticationToken: userResponse.TempAuthenticationToken})
+}
+
 func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	// Record API counter and start time for instrumentation.
 	startTime := time.Now()
@@ -60,6 +104,9 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 		return
 	}
 
+	// TODO: from headers
+	requestBody.UserID = constants.UserPrefix + requestBody.UserID
+
 	// Create wallet for the user
 	_, err := walletProvider.CreateWallet(&requestBody)
 	if err != nil {
@@ -73,4 +120,39 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.CreateWalletsHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.CreateWalletsHandlerV1).Observe(time.Since(startTime).Seconds())
 	ctx.JSON(http.StatusOK, models.WalletResponse{Result: constants.SUCCESS})
+}
+
+func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {
+	// Record API counter and start time for instrumentation.
+	startTime := time.Now()
+	instrumentation.RequestCounter.WithLabelValues(constants.TransferAssetsHandlerV1).Inc()
+
+	var requestBody models.TransactionRequest
+	if !utils.BindRequest(ctx, &requestBody, constants.TransferAssetsHandlerV1, startTime) {
+		return
+	}
+
+	var walletProvider wallet.Provider
+	switch ctx.Param("provider") {
+	case constants.DFNS:
+		walletProvider = c.firstWalletProvider
+	default:
+		utils.HandleError(ctx, http.StatusBadRequest,
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.TransferAssetsHandlerV1, startTime)
+		return
+	}
+
+	// Transfer assets
+	_, err := walletProvider.TransferAssets(&requestBody)
+	if err != nil {
+		utils.HandleError(ctx, http.StatusInternalServerError,
+			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.TransferAssetsHandlerV1, startTime)
+		return
+	}
+
+	// Return aggregated results
+	log.Println("Assets successfully transfered for user: " + requestBody.FromAccount)
+	instrumentation.SuccessRequestCounter.WithLabelValues(constants.TransferAssetsHandlerV1).Inc()
+	instrumentation.SuccessLatency.WithLabelValues(constants.TransferAssetsHandlerV1).Observe(time.Since(startTime).Seconds())
+	ctx.JSON(http.StatusOK, models.TransactionResponse{Result: constants.SUCCESS})
 }
