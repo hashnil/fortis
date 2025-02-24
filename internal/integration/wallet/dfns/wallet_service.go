@@ -6,21 +6,11 @@ import (
 	"fortis/entity/constants"
 	"fortis/entity/models"
 	"fortis/infrastructure/config"
-	"fortis/internal/integration/db"
 	dbmodels "fortis/internal/integration/db/models"
-	"fortis/internal/integration/wallet"
 	"fortis/pkg/utils"
 
 	"github.com/google/uuid"
 )
-
-type DFNSWalletProvider struct {
-	dbClient db.Client
-}
-
-func NewDFNSWalletProvider(dbClient db.Client) wallet.Provider {
-	return &DFNSWalletProvider{dbClient: dbClient}
-}
 
 // CreateWallet ensures the user exists and creates wallets for multiple chains, storing them in the database.
 func (p *DFNSWalletProvider) CreateWallet(request *models.WalletRequest) (*models.WalletResponse, error) {
@@ -87,9 +77,9 @@ func (p *DFNSWalletProvider) createOrFetchWallet(
 
 	// Wallet not found, create a new wallet in DFNS
 	walletRequest := &models.DFNSWalletRequest{
-		Network:         network,
-		Name:            fmt.Sprintf("%s-%s-wallet", internalUserData.Username, network),
-		DelayDelegation: true,
+		Network:    network,
+		Name:       fmt.Sprintf("%s-%s-wallet", internalUserData.Username, network),
+		DelegateTo: dfnsUserData.User.ID,
 	}
 
 	walletResponse, err := APIClient[models.DFNSWalletResponse](walletRequest, "POST", "/wallets")
@@ -100,7 +90,7 @@ func (p *DFNSWalletProvider) createOrFetchWallet(
 	// Prepare wallet data for database storage
 	newWallet := dbmodels.Wallet{
 		ID:         constants.WalletPrefix + uuid.NewString(),
-		UserID:     constants.UserPrefix + internalUserData.UserID,
+		UserID:     internalUserData.UserID,
 		Username:   internalUserData.Username,
 		Provider:   constants.DFNS,
 		Network:    network,

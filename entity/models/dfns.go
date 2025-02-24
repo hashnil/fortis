@@ -62,9 +62,9 @@ type DFNSWebhookResponse struct {
 
 // DFNSWalletRequest represents the request structure for creating a new wallet in DFNS.
 type DFNSWalletRequest struct {
-	Network         string `json:"network"`
-	Name            string `json:"name"`
-	DelayDelegation bool   `json:"delayDelegation"`
+	Network    string `json:"network"`
+	Name       string `json:"name"`
+	DelegateTo string `json:"delegateTo"`
 }
 
 // DFNSWalletResponse represents the response received after creating a wallet in DFNS.
