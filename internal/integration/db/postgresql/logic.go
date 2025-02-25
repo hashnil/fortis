@@ -7,6 +7,25 @@ import (
 	"gorm.io/gorm"
 )
 
+// FindUserByID retrieves the first user for a given user ID.
+func (db *PostgresSQLClient) FindUserByID(userID string) (models.User, error) {
+	var user models.User
+	err := db.client.Where("id = ?", userID).First(&user).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return models.User{}, nil // Wallet not found
+		}
+		return models.User{}, fmt.Errorf("failed to find user: %w", err)
+	}
+	return user, nil
+}
+
+// CreateUser inserts a new user record into the database.
+func (db *PostgresSQLClient) CreateUser(user models.User) error {
+	return db.client.Create(&user).Error
+}
+
 // FindUserWallet retrieves the first wallet for a given user ID.
 func (db *PostgresSQLClient) FindUserWallet(userID string) (models.Wallet, error) {
 	var wallet models.Wallet

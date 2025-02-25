@@ -72,6 +72,7 @@ func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
 	if userResponse.ExistingUser {
 		utils.HandleError(ctx, http.StatusConflict,
 			constants.ErrExistingUser, constants.ErrExistingUser, err, constants.RegisterUserHandlerV1, startTime)
+		return
 	}
 
 	// Return aggregated results

@@ -1,0 +1,17 @@
+package models
+
+import "time"
+
+type User struct {
+	ID        string    `gorm:"column:id;type:varchar(50);primaryKey"`     // us-<uuid>: Unique User ID
+	Name      string    `gorm:"column:name;type:varchar(50);not null"`     // Username
+	Provider  string    `gorm:"column:provider;type:varchar(50);not null"` // Wallet provider (e.g., 'dfns', 'coinbase')
+	IsActive  bool      `gorm:"column:is_active;type:bool;default:true"`   // User status (true = Active)
+	Metadata  []byte    `gorm:"column:metadata;type:jsonb;not null"`       // Additional user metadata (stored as JSONB)
+	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`          // Record creation timestamp
+	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime"`          // Record update timestamp
+}
+
+func (User) TableName() string {
+	return "users"
+}
