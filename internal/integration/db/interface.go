@@ -13,4 +13,7 @@ type Client interface {
 	CreateUser(models.User) error
 	CreateWallet(models.Wallet) error
 	CreateTransactionLog(models.TransactionLog) error
+
+	// Update requests
+	UpdateUser(models.User) error
 }

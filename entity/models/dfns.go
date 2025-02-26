@@ -43,6 +43,23 @@ type DFNSUserRegistrationResponse struct {
 	} `json:"authenticatorSelection"`
 }
 
+// DFNSCompleteUserRegistrationResponse is the response returned when the user completes the registration process.
+type DFNSCompleteUserRegistrationResponse struct {
+	Credential struct {
+		UUID           string `json:"uuid"`
+		CredentialKind string `json:"credentialKind"`
+		Name           string `json:"name"`
+	} `json:"credential"`
+	User struct {
+		ID       string `json:"id"`
+		Username string `json:"username"`
+		OrgID    string `json:"orgId"`
+	} `json:"user"`
+	Authentication struct {
+		Token string `json:"token"`
+	} `json:"authentication"`
+}
+
 // DFNSWebhookRequest represents the request to register a webhook.
 type DFNSWebhookRequest struct {
 	URL         string   `json:"url"`

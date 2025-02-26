@@ -3,7 +3,8 @@ package wallet
 import "fortis/entity/models"
 
 type Provider interface {
-	RegisterDelegatedUser(request *models.CreateUserRequest) (*models.CreateUserResponse, error)
-	CreateWallet(request *models.WalletRequest) (*models.WalletResponse, error)
-	TransferAssets(request *models.TransactionRequest) (*models.TransactionResponse, error)
+	RegisterDelegatedUser(models.CreateUserRequest) (*models.CreateUserResponse, error)
+	ActivateDelegatedUser(models.ActivateUserRequest) (*models.ActivateUserResponse, error)
+	CreateWallet(models.WalletRequest) (*models.WalletResponse, error)
+	TransferAssets(models.TransactionRequest) (*models.TransactionResponse, error)
 }

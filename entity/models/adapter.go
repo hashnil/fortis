@@ -1,26 +1,45 @@
 package models
 
+// --- User Registration --- //
 type CreateUserRequest struct {
 	UserID   string `json:"user_id,omitempty"` // with prefix: us-
-	Username string `json:"username"`
+	Username string `json:"username" binding:"required"`
 }
 
 type CreateUserResponse struct {
-	Result                  string `json:"result"`
-	ExistingUser            bool   `json:"existing_user,omitempty"`
-	Challenge               string `json:"challenge,omitempty"`
-	TempAuthenticationToken string `json:"temp_auth_token,omitempty"`
+	Result              string `json:"result"`
+	ExistingUser        bool   `json:"existing_user,omitempty"`
+	Challenge           string `json:"challenge,omitempty"`
+	AuthenticationToken string `json:"auth_token,omitempty"`
 }
 
-type WalletRequest struct {
-	UserID   string `json:"user_id,omitempty"` // with prefix: us-
-	Username string `json:"username"`
+// --- User Activation --- //
+type ActivateUserRequest struct {
+	UserID         string                      `json:"user_id,omitempty"` // with prefix: us-
+	CredentialInfo []map[string]CredentialInfo `json:"credential_info" binding:"required"`
 }
 
-type WalletResponse struct {
+type CredentialInfo struct {
+	CredentialID    string `json:"credential_id" binding:"required"`
+	ClientData      string `json:"client_data" binding:"required"`
+	AttestationData string `json:"attestation_data" binding:"required"`
+}
+
+type ActivateUserResponse struct {
 	Result string `json:"result"`
 }
 
+// --- Wallet Management --- //
+type WalletRequest struct {
+	UserID string `json:"user_id,omitempty"` // with prefix: us-
+}
+
+type WalletResponse struct {
+	Result    string              `json:"result"`
+	Addresses []map[string]string `json:"addresses,omitempty"`
+}
+
+// --- Transactions --- //
 type TransactionRequest struct {
 	UserID      string `json:"user_id,omitempty"` // for from account identification; with prefix: us-
 	FromAccount string `json:"from_account,omitempty"`

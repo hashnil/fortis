@@ -16,6 +16,11 @@ func (db *PostgresSQLClient) CreateUser(user models.User) error {
 	return db.client.Create(&user).Error
 }
 
+// UpdateUser updates an existing user record in the database.
+func (db *PostgresSQLClient) UpdateUser(user models.User) error {
+	return db.client.Model(&models.User{}).Where("id = ?", user.ID).Updates(user).Error
+}
+
 // FindWalletByNetwork retrieves a wallet based on user ID, provider, and network.
 func (db *PostgresSQLClient) FindWalletByNetwork(userID, provider, network string) (models.Wallet, error) {
 	var wallet models.Wallet
