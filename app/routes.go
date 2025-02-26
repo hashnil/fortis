@@ -16,6 +16,7 @@ func registerRoutes(healthController *controller.HealthController, walletControl
 
 	// Wallet access routes
 	apiV1.POST("/:provider/wallet/register-user", walletController.CreateDelegatedUserV1)
-	apiV1.POST("/:provider/wallet/create-wallet", walletController.CreateWalletV1)
-	apiV1.POST("/:provider/transfer-assets", walletController.TransferAssetsV1)
+	apiV1.POST("/:provider/wallet/activate-user", walletController.ActivateUserV1)
+	apiV1.POST("/:provider/wallet/create", walletController.CreateWalletV1)
+	apiV1.POST("/:provider/wallet/transfer", walletController.TransferAssetsV1)
 }

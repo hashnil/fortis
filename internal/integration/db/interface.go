@@ -5,12 +5,12 @@ import (
 )
 
 type Client interface {
+	// Fetch requests
 	FindUserByID(userID string) (models.User, error)
-	CreateUser(models.User) error
-
-	FindUserWallet(userID string) (models.Wallet, error)
 	FindWalletByNetwork(userID, provider, network string) (models.Wallet, error)
+
+	// Create requests
+	CreateUser(models.User) error
 	CreateWallet(models.Wallet) error
-	GetWalletByUsername(username, provider, network string) (models.Wallet, error)
 	CreateTransactionLog(models.TransactionLog) error
 }

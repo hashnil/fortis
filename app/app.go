@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/viper"
 
 	"fortis/api/controller"
+	"fortis/entity/constants"
+	"fortis/infrastructure/factory"
 	"fortis/internal/instrumentation"
 )
 
@@ -22,8 +24,17 @@ var (
 
 // NewService initializes the Service struct, sets up the Gin engine, and registers routes.
 func NewService() (*Service, error) {
+	// Initialize PostgreSQL client for database operations.
+	dbClient, err := factory.InitDBClient(constants.PostgreSQL)
+	if err != nil {
+		return &Service{}, fmt.Errorf("failed to initialize postgres client: %w", err)
+	}
+
+	// Start prometheus server
+	instrumentation.StartPrometheusServer()
+
 	healthController := controller.NewHealthController()
-	walletController, err := controller.NewWalletController()
+	walletController, err := controller.NewWalletController(dbClient)
 	if err != nil {
 		return &Service{}, fmt.Errorf("unable to create controller: %v", err)
 	}
@@ -35,9 +46,6 @@ func NewService() (*Service, error) {
 
 	// Register application routes
 	registerRoutes(healthController, walletController)
-
-	// Start prometheus server
-	instrumentation.StartPrometheusServer()
 
 	return &Service{
 		Engine: engine,

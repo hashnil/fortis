@@ -7,8 +7,8 @@ const (
 	API_VERSION_V1 = "v1"
 
 	// Secrets constants
-	APP_CONFIG_SECRET   = "APP_CONFIG"
-	DFNS_PVT_KEY_SECRET = "DFNS_PVT_KEY"
+	APP_CONFIG_SECRET   = "wallet/v1/app/config"
+	DFNS_PVT_KEY_SECRET = "wallet/v1/keys/dfns"
 
 	// DB Factory constants
 	PostgreSQL = "postgresql"
