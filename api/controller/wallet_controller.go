@@ -17,17 +17,10 @@ import (
 )
 
 type WalletController struct {
-	dbClient            db.Client       // Database client for user operations.
 	firstWalletProvider wallet.Provider // Wallet provider for wallet operations: DFNS
 }
 
-func NewWalletController() (*WalletController, error) {
-	// Initialize PostgreSQL client for database operations.
-	dbClient, err := factory.InitDBClient(constants.PostgreSQL)
-	if err != nil {
-		return &WalletController{}, fmt.Errorf("failed to initialize postgres client: %w", err)
-	}
-
+func NewWalletController(dbClient db.Client) (*WalletController, error) {
 	// Initialize DFNS client for wallet operations.
 	dfnsWalletProvider, err := factory.InitWalletProvider(constants.DFNS, dbClient)
 	if err != nil {
@@ -35,7 +28,6 @@ func NewWalletController() (*WalletController, error) {
 	}
 
 	return &WalletController{
-		dbClient:            dbClient,
 		firstWalletProvider: dfnsWalletProvider,
 	}, nil
 }
@@ -61,7 +53,7 @@ func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
 	}
 
 	// Create delegated user
-	userResponse, err := walletProvider.RegisterDelegatedUser(&requestBody)
+	userResponse, err := walletProvider.RegisterDelegatedUser(requestBody)
 	if err != nil {
 		utils.HandleError(ctx, http.StatusInternalServerError,
 			constants.ErrCreateUser, constants.ErrCreateUser, err, constants.RegisterUserHandlerV1, startTime)
@@ -79,19 +71,20 @@ func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
 	log.Println("Delegated user created successfully for: " + requestBody.Username)
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.RegisterUserHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.RegisterUserHandlerV1).Observe(time.Since(startTime).Seconds())
+
 	ctx.JSON(http.StatusOK, models.CreateUserResponse{
-		Result:                  constants.SUCCESS,
-		Challenge:               userResponse.Challenge,
-		TempAuthenticationToken: userResponse.TempAuthenticationToken})
+		Result:              constants.SUCCESS,
+		Challenge:           userResponse.Challenge,
+		AuthenticationToken: userResponse.AuthenticationToken})
 }
 
-func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
+func (c *WalletController) ActivateUserV1(ctx *gin.Context) {
 	// Record API counter and start time for instrumentation.
 	startTime := time.Now()
-	instrumentation.RequestCounter.WithLabelValues(constants.CreateWalletsHandlerV1).Inc()
+	instrumentation.RequestCounter.WithLabelValues(constants.ActivateUserHandlerV1).Inc()
 
-	var requestBody models.WalletRequest
-	if !utils.BindRequest(ctx, &requestBody, constants.CreateWalletsHandlerV1, startTime) {
+	var requestBody models.ActivateUserRequest
+	if !utils.BindRequest(ctx, &requestBody, constants.ActivateUserHandlerV1, startTime) {
 		return
 	}
 
@@ -101,7 +94,7 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 		walletProvider = c.firstWalletProvider
 	default:
 		utils.HandleError(ctx, http.StatusBadRequest,
-			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.CreateWalletsHandlerV1, startTime)
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.ActivateUserHandlerV1, startTime)
 		return
 	}
 
@@ -109,18 +102,58 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	requestBody.UserID = constants.UserPrefix + requestBody.UserID
 
 	// Create wallet for the user
-	_, err := walletProvider.CreateWallet(&requestBody)
+	_, err := walletProvider.ActivateDelegatedUser(requestBody)
 	if err != nil {
 		utils.HandleError(ctx, http.StatusInternalServerError,
-			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.CreateWalletsHandlerV1, startTime)
+			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.ActivateUserHandlerV1, startTime)
 		return
 	}
 
 	// Return aggregated results
-	log.Println("Wallets successfully created for user: " + requestBody.Username)
-	instrumentation.SuccessRequestCounter.WithLabelValues(constants.CreateWalletsHandlerV1).Inc()
-	instrumentation.SuccessLatency.WithLabelValues(constants.CreateWalletsHandlerV1).Observe(time.Since(startTime).Seconds())
-	ctx.JSON(http.StatusOK, models.WalletResponse{Result: constants.SUCCESS})
+	log.Println("User successfully activated: " + requestBody.UserID)
+	instrumentation.SuccessRequestCounter.WithLabelValues(constants.ActivateUserHandlerV1).Inc()
+	instrumentation.SuccessLatency.WithLabelValues(constants.ActivateUserHandlerV1).Observe(time.Since(startTime).Seconds())
+
+	ctx.JSON(http.StatusOK, models.ActivateUserResponse{Result: constants.SUCCESS})
+}
+
+func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
+	// Record API counter and start time for instrumentation.
+	startTime := time.Now()
+	instrumentation.RequestCounter.WithLabelValues(constants.CreateWalletHandlerV1).Inc()
+
+	var requestBody models.WalletRequest
+	if !utils.BindRequest(ctx, &requestBody, constants.CreateWalletHandlerV1, startTime) {
+		return
+	}
+
+	var walletProvider wallet.Provider
+	switch ctx.Param("provider") {
+	case constants.DFNS:
+		walletProvider = c.firstWalletProvider
+	default:
+		utils.HandleError(ctx, http.StatusBadRequest,
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.CreateWalletHandlerV1, startTime)
+		return
+	}
+
+	// Create wallet for the user
+	walletResponse, err := walletProvider.CreateWallet(requestBody)
+	if err != nil {
+		utils.HandleError(ctx, http.StatusInternalServerError,
+			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.CreateWalletHandlerV1, startTime)
+		return
+	}
+
+	// Successful wallet creation
+	log.Println("Wallet created successfully for user: " + requestBody.UserID)
+	instrumentation.SuccessRequestCounter.WithLabelValues(constants.CreateWalletHandlerV1).Inc()
+	instrumentation.SuccessLatency.WithLabelValues(constants.CreateWalletHandlerV1).Observe(time.Since(startTime).Seconds())
+
+	ctx.JSON(http.StatusOK, models.WalletResponse{
+		Result:    constants.SUCCESS,
+		Addresses: walletResponse.Addresses,
+	})
 }
 
 func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {

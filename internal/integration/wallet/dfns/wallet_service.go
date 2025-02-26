@@ -10,98 +10,76 @@ import (
 	"fortis/pkg/utils"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
-// CreateWallet ensures the user exists and creates wallets for multiple chains, storing them in the database.
-func (p *DFNSWalletProvider) CreateWallet(request *models.WalletRequest) (*models.WalletResponse, error) {
-	// Ensure user is registered (create a new user if not found)
-	userResponse, err := p.registerOrFetchUser(*request)
+// CreateWallet ensures the user exists and creates wallets for each configured network.
+func (p *DFNSWalletProvider) CreateWallet(request models.WalletRequest) (*models.WalletResponse, error) {
+	// Retrieve user details from the database
+	dbUser, err := p.dbClient.FindUserByID(request.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to register or fetch user: %w", err)
+		return nil, fmt.Errorf("failed to retrieve user %s from DB: %w", request.UserID, err)
 	}
 
-	// Create wallets for specified networks (if they don’t exist)
+	// Iterate over configured networks and create/fetch wallets
+	var response models.WalletResponse
 	for _, network := range config.GetNetworks() {
-		_, err := p.createOrFetchWallet(*request, *userResponse, network)
+		wallet, err := p.createOrFetchWallet(dbUser, network)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create or fetch wallet for chain %s: %w", network, err)
+			return nil, fmt.Errorf("failed to process wallet for network %s: %w", network, err)
 		}
+
+		// Append wallet address to response
+		response.Addresses = append(response.Addresses, map[string]string{network: wallet.Address})
 	}
 
-	return &models.WalletResponse{}, nil
-}
-
-// registerOrFetchUser checks if the user exists in the database or registers a new user in DFNS.
-func (p *DFNSWalletProvider) registerOrFetchUser(request models.WalletRequest) (*models.DFNSUserRegistrationResponse, error) {
-	// Check if user exists in DB
-	user, err := p.dbClient.FindUserWallet(request.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check user %s in DB: %w", request.UserID, err)
-	}
-
-	if user.ID != "" {
-		var userResponse models.DFNSUserRegistrationResponse
-		if err := json.Unmarshal(user.UserMeta, &userResponse); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal user metadata: %w", err)
-		}
-		return &userResponse, nil
-	}
-
-	// User not found, register a new delegated user
-	return p.registerDelegatedUser(request.Username)
-}
-
-// registerDelegatedUser registers a new user in DFNS and returns the response.
-func (p *DFNSWalletProvider) registerDelegatedUser(username string) (*models.DFNSUserRegistrationResponse, error) {
-	userData := models.DFNSUserRegistrationRequest{
-		Kind:  "EndUser",
-		Email: username,
-	}
-
-	return APIClient[models.DFNSUserRegistrationResponse](userData, "POST", "/auth/registration/delegated")
+	return &response, nil
 }
 
 // createOrFetchWallet checks if a wallet exists for a specific network or creates a new wallet in DFNS.
-func (p *DFNSWalletProvider) createOrFetchWallet(
-	internalUserData models.WalletRequest, dfnsUserData models.DFNSUserRegistrationResponse, network string,
-) (*dbmodels.Wallet, error) {
-	// Check if wallet exists in DB for the given network
-	walletRecord, err := p.dbClient.FindWalletByNetwork(internalUserData.UserID, constants.DFNS, network)
-	if err != nil {
-		return nil, fmt.Errorf("error checking wallet in DB: %w", err)
+func (p *DFNSWalletProvider) createOrFetchWallet(dbUser dbmodels.User, network string) (*dbmodels.Wallet, error) {
+	// Check if a wallet already exists in the database for this user and network
+	wallet, err := p.dbClient.FindWalletByNetwork(dbUser.ID, constants.DFNS, network)
+	if err == nil {
+		// Wallet already exists, return it
+		return &wallet, nil
+	} else if err != gorm.ErrRecordNotFound {
+		// Return if any error other than "wallet not found" occurs
+		return nil, fmt.Errorf("error retrieving wallet from DB: %w", err)
 	}
 
-	if walletRecord.ID != "" {
-		return &walletRecord, nil
+	// Extract DFNS user details from stored metadata
+	var userResponse models.DFNSUserRegistrationResponse
+	if err := json.Unmarshal(dbUser.Metadata, &userResponse); err != nil {
+		return nil, fmt.Errorf("failed to parse user metadata: %w", err)
 	}
 
-	// Wallet not found, create a new wallet in DFNS
+	// Construct wallet creation request for DFNS
 	walletRequest := &models.DFNSWalletRequest{
 		Network:    network,
-		Name:       fmt.Sprintf("%s-%s-wallet", internalUserData.Username, network),
-		DelegateTo: dfnsUserData.User.ID,
+		Name:       fmt.Sprintf("%s-%s-wallet", dbUser.Name, network),
+		DelegateTo: userResponse.User.ID, // Assigning wallet ownership to DFNS user
 	}
 
-	walletResponse, err := APIClient[models.DFNSWalletResponse](walletRequest, "POST", "/wallets")
+	// Send API request to DFNS to create a new wallet
+	walletResponse, err := APIClient[models.DFNSWalletResponse](walletRequest, "POST", "/wallets", nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create wallet for network %s: %w", network, err)
+		return nil, fmt.Errorf("failed to create wallet on DFNS for network %s: %w", network, err)
 	}
 
-	// Prepare wallet data for database storage
+	// Construct wallet model for database storage
 	newWallet := dbmodels.Wallet{
-		ID:         constants.WalletPrefix + uuid.NewString(),
-		UserID:     internalUserData.UserID,
-		Username:   internalUserData.Username,
-		Provider:   constants.DFNS,
-		Network:    network,
-		Name:       walletResponse.Name,
-		Address:    walletResponse.Address,
-		IsActive:   walletResponse.Status == "Active",
-		UserMeta:   utils.MarshalToJSON(dfnsUserData),
-		WalletMeta: utils.MarshalToJSON(walletResponse),
+		ID:       constants.WalletPrefix + uuid.NewString(),
+		UserID:   dbUser.ID,
+		Provider: constants.DFNS,
+		Network:  network,
+		Name:     walletResponse.Name,
+		Address:  walletResponse.Address,
+		IsActive: walletResponse.Status == "Active",
+		Metadata: utils.MarshalToJSON(walletResponse), // Store full response for reference
 	}
 
-	// Store the wallet in the database
+	// Persist wallet details in the database
 	if err := p.dbClient.CreateWallet(newWallet); err != nil {
 		return nil, fmt.Errorf("failed to store wallet in DB: %w", err)
 	}
