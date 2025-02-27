@@ -7,7 +7,7 @@ import (
 type Client interface {
 	// Fetch requests
 	FindUserByID(userID string) (models.User, error)
-	FindWalletByNetwork(userID, provider, network string) (models.Wallet, error)
+	FindWalletByNameAndNetwork(username, provider, network string) (models.Wallet, error)
 
 	// Create requests
 	CreateUser(models.User) error

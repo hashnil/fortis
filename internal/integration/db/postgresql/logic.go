@@ -21,10 +21,10 @@ func (db *PostgresSQLClient) UpdateUser(user models.User) error {
 	return db.client.Model(&models.User{}).Where("id = ?", user.ID).Updates(user).Error
 }
 
-// FindWalletByNetwork retrieves a wallet based on user ID, provider, and network.
-func (db *PostgresSQLClient) FindWalletByNetwork(userID, provider, network string) (models.Wallet, error) {
+// FindWalletByNameAndNetwork retrieves a wallet based on username, provider, and network.
+func (db *PostgresSQLClient) FindWalletByNameAndNetwork(username, provider, network string) (models.Wallet, error) {
 	var wallet models.Wallet
-	err := db.client.First(&wallet, "user_id = ? AND provider = ? AND network = ?", userID, provider, network).Error
+	err := db.client.First(&wallet, "username = ? AND provider = ? AND network = ?", username, provider, network).Error
 	return wallet, err
 }
 

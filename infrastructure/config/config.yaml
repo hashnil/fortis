@@ -21,3 +21,4 @@ wallet:
       - "BaseSepolia"
     asset_transfer:
       primary_network: "SolanaDevnet"
+      native_token: "Spl"

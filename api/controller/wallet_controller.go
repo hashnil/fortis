@@ -100,7 +100,7 @@ func (c *WalletController) ActivateUserV1(ctx *gin.Context) {
 	walletProvider, err := c.getWalletProvider(ctx)
 	if err != nil {
 		utils.HandleError(ctx, http.StatusBadRequest,
-			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.RegisterUserHandlerV1, startTime)
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.ActivateUserHandlerV1, startTime)
 		return
 	}
 
@@ -111,12 +111,12 @@ func (c *WalletController) ActivateUserV1(ctx *gin.Context) {
 	err = walletProvider.ActivateDelegatedUser(requestBody)
 	if err != nil {
 		status := http.StatusInternalServerError
-		errCode := constants.ErrCreateWallet
+		errMsg := constants.ErrActivateUser
 		if strings.Contains(err.Error(), constants.DuplicateUser) {
 			status = http.StatusConflict
-			errCode = constants.ErrExistingUser
+			errMsg = constants.ErrExistingUser
 		}
-		utils.HandleError(ctx, status, errCode, errCode, err, constants.ActivateUserHandlerV1, startTime)
+		utils.HandleError(ctx, status, errMsg, errMsg, err, constants.ActivateUserHandlerV1, startTime)
 		return
 	}
 
@@ -142,7 +142,7 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	walletProvider, err := c.getWalletProvider(ctx)
 	if err != nil {
 		utils.HandleError(ctx, http.StatusBadRequest,
-			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.RegisterUserHandlerV1, startTime)
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.CreateWalletHandlerV1, startTime)
 		return
 	}
 
@@ -170,7 +170,7 @@ func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {
 	startTime := time.Now()
 	instrumentation.RequestCounter.WithLabelValues(constants.TransferAssetsHandlerV1).Inc()
 
-	var requestBody models.TransactionRequest
+	var requestBody models.TransferRequest
 	if !utils.BindRequest(ctx, &requestBody, constants.TransferAssetsHandlerV1, startTime) {
 		return
 	}
@@ -179,7 +179,7 @@ func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {
 	walletProvider, err := c.getWalletProvider(ctx)
 	if err != nil {
 		utils.HandleError(ctx, http.StatusBadRequest,
-			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.RegisterUserHandlerV1, startTime)
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.TransferAssetsHandlerV1, startTime)
 		return
 	}
 
@@ -187,13 +187,13 @@ func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {
 	_, err = walletProvider.TransferAssets(requestBody)
 	if err != nil {
 		utils.HandleError(ctx, http.StatusInternalServerError,
-			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.TransferAssetsHandlerV1, startTime)
+			constants.ErrTransferAssets, constants.ErrTransferAssets, err, constants.TransferAssetsHandlerV1, startTime)
 		return
 	}
 
 	// Return aggregated results
-	log.Println("Assets successfully transfered for user: " + requestBody.FromAccount)
+	log.Println("Assets successfully transfered for user: ")
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.TransferAssetsHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.TransferAssetsHandlerV1).Observe(time.Since(startTime).Seconds())
-	ctx.JSON(http.StatusOK, models.TransactionResponse{Result: constants.SUCCESS})
+	ctx.JSON(http.StatusOK, models.TransferResponse{Result: constants.SUCCESS})
 }

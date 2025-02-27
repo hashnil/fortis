@@ -55,9 +55,6 @@ type DFNSCompleteUserRegistrationResponse struct {
 		Username string `json:"username"`
 		OrgID    string `json:"orgId"`
 	} `json:"user"`
-	Authentication struct {
-		Token string `json:"token"`
-	} `json:"authentication"`
 }
 
 // DFNSWebhookRequest represents the request to register a webhook.

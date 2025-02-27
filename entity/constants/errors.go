@@ -6,7 +6,9 @@ const (
 	DuplicateUser        = "user is already registered"
 
 	ErrInvalidProvider = "Invalid wallet provider"
-	ErrCreateWallet    = "Failed to create wallet"
 	ErrCreateUser      = "Failed to create user"
+	ErrActivateUser    = "Failed to activate user"
+	ErrCreateWallet    = "Failed to create wallet"
+	ErrTransferAssets  = "Failed to transfer assets"
 	ErrExistingUser    = "User is already registered and activated"
 )

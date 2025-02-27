@@ -4,7 +4,8 @@ import "time"
 
 type Wallet struct {
 	ID        string    `gorm:"column:id;type:varchar(50);primaryKey"`                                  // wa-<uuid>: Unique wallet ID
-	UserID    string    `gorm:"column:user_id;type:varchar(50);not null;uniqueIndex:user_network_idx"`  // us-<uuid>: User ID
+	UserID    string    `gorm:"column:user_id;type:varchar(50);not null;index"`                         // us-<uuid>: User ID
+	Username  string    `gorm:"column:username;type:varchar(50);not null;uniqueIndex:user_network_idx"` // Username
 	Provider  string    `gorm:"column:provider;type:varchar(50);not null;uniqueIndex:user_network_idx"` // Wallet provider (e.g., 'dfns', 'coinbase')
 	Network   string    `gorm:"column:network;type:varchar(50);not null;uniqueIndex:user_network_idx"`  // Blockchain network (e.g., 'Solana', 'Base', 'Matic')
 	Name      string    `gorm:"column:name;type:varchar(100)"`                                          // Wallet name (e.g., "My awesome wallet")

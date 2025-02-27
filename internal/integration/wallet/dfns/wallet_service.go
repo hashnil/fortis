@@ -39,7 +39,7 @@ func (p *DFNSWalletProvider) CreateWallet(request models.WalletRequest) (*models
 // createOrFetchWallet checks if a wallet exists for a specific network or creates a new wallet in DFNS.
 func (p *DFNSWalletProvider) createOrFetchWallet(dbUser dbmodels.User, network string) (*dbmodels.Wallet, error) {
 	// Check if a wallet already exists in the database for this user and network
-	wallet, err := p.dbClient.FindWalletByNetwork(dbUser.ID, constants.DFNS, network)
+	wallet, err := p.dbClient.FindWalletByNameAndNetwork(dbUser.Name, constants.DFNS, network)
 	if err == nil {
 		// Wallet already exists, return it
 		return &wallet, nil
@@ -71,6 +71,7 @@ func (p *DFNSWalletProvider) createOrFetchWallet(dbUser dbmodels.User, network s
 	newWallet := dbmodels.Wallet{
 		ID:       constants.WalletPrefix + uuid.NewString(),
 		UserID:   dbUser.ID,
+		Username: dbUser.Name,
 		Provider: constants.DFNS,
 		Network:  network,
 		Name:     walletResponse.Name,

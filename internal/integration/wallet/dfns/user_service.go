@@ -26,11 +26,7 @@ func (p *DFNSWalletProvider) RegisterDelegatedUser(request models.CreateUserRequ
 		return nil, fmt.Errorf("failed to register or fetch user: %w", err)
 	}
 
-	// Return authentication details for new user
-	return &models.CreateUserResponse{
-		Challenge:           userResponse.Challenge,
-		AuthenticationToken: userResponse.TemporaryAuthenticationToken,
-	}, nil
+	return &models.CreateUserResponse{Challenge: userResponse.Challenge}, nil
 }
 
 // registerOrFetchUser checks if the user exists in the database or registers a new user in DFNS.
