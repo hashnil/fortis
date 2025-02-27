@@ -1,21 +1,13 @@
 package dfns
 
 import (
-	"crypto"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"fortis/entity/constants"
 	"fortis/entity/models"
 	dbmodels "fortis/internal/integration/db/models"
 	"fortis/pkg/utils"
-	"log"
 	"strings"
 
 	"gorm.io/gorm"
@@ -112,40 +104,39 @@ func (p *DFNSWalletProvider) restartDelegatedRegistration(username string) (*mod
 }
 
 // ActivateDelegatedUser activates a user by completing their registration in DFNS.
-func (p *DFNSWalletProvider) ActivateDelegatedUser(request models.ActivateUserRequest) (*models.ActivateUserResponse, error) {
+func (p *DFNSWalletProvider) ActivateDelegatedUser(request models.ActivateUserRequest) error {
 	// Retrieve user details from the database
 	user, err := p.dbClient.FindUserByID(request.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve user %s from DB: %w", request.UserID, err)
+		return fmt.Errorf("failed to retrieve user %s from DB: %w", request.UserID, err)
 	}
 
 	// If user is already active, return an error
 	if user.IsActive {
-		return nil, errors.New(constants.DuplicateUser)
+		return errors.New(constants.DuplicateUser)
 	}
 
 	// Parse user metadata to extract DFNS registration details
 	var dfnsUser models.DFNSUserRegistrationResponse
 	if err := json.Unmarshal(user.Metadata, &dfnsUser); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal DFNS user metadata: %w", err)
+		return fmt.Errorf("failed to unmarshal DFNS user metadata: %w", err)
 	}
 
 	// Complete user registration using provided credentials and temporary authentication token
-	completeUserRegResp, err := p.completeUserRegistration(request.CredentialInfo, dfnsUser.TemporaryAuthenticationToken)
+	_, err = p.completeUserRegistration(request.CredentialInfo, dfnsUser.TemporaryAuthenticationToken)
 	if err != nil {
-		return nil, fmt.Errorf("failed to complete user registration: %w", err)
+		return fmt.Errorf("failed to complete user registration: %w", err)
 	}
 
 	// Mark user as active in the database
 	if err := p.dbClient.UpdateUser(dbmodels.User{
-		ID:        user.ID,
-		IsActive:  true,
-		AuthToken: completeUserRegResp.Authentication.Token,
+		ID:       user.ID,
+		IsActive: true,
 	}); err != nil {
-		return nil, fmt.Errorf("failed to update user token in DB: %w", err)
+		return fmt.Errorf("failed to update user activation status in DB: %w", err)
 	}
 
-	return nil, nil
+	return nil
 }
 
 // completeUserRegistration finalizes the registration process by submitting credentials.
@@ -182,67 +173,4 @@ func (p *DFNSWalletProvider) completeUserRegistration(
 
 	// Call the API to complete registration
 	return APIClient[models.DFNSCompleteUserRegistrationResponse](requestPayload, "POST", "/auth/registration", &tempAuthToken)
-}
-
-// TODO: remove
-func getCredentials(challenge string) map[string]interface{} {
-	clientData, _ := json.Marshal(map[string]string{
-		"challenge": challenge,
-		"type":      "key.create",
-	})
-
-	hash := sha256Hex(clientData)
-
-	// Generate a new RSA key pair
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		log.Fatalf("error generating key: %v", err)
-	}
-
-	publicKeyDER, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		log.Fatalf("error marshaling public key: %v", err)
-	}
-
-	publicKeyPEM := string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: publicKeyDER}))
-
-	credInfo, _ := json.Marshal(map[string]string{
-		"clientDataHash": string(hash),
-		"publicKey":      publicKeyPEM,
-	})
-
-	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, sha256Hex(credInfo))
-	if err != nil {
-		log.Fatalf("error signing data: %v", err)
-	}
-
-	attestationData, _ := json.Marshal(map[string]string{
-		"publicKey": publicKeyPEM,
-		"signature": string(sha256Hex(signature)),
-	})
-
-	credID := toBase64URL(make([]byte, 16))
-	rand.Read([]byte(credID))
-
-	requestPayload := map[string]interface{}{
-		"firstFactorCredential": map[string]interface{}{
-			"credentialKind": "Key",
-			"credentialInfo": map[string]string{
-				"credId":          credID,
-				"clientData":      toBase64URL(clientData),
-				"attestationData": toBase64URL(attestationData),
-			},
-		},
-	}
-
-	return requestPayload
-}
-
-func toBase64URL(data []byte) string {
-	return base64.RawURLEncoding.EncodeToString(data)
-}
-
-func sha256Hex(data []byte) []byte {
-	hash := sha256.Sum256(data)
-	return hash[:]
 }
