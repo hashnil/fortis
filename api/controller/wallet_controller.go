@@ -11,6 +11,7 @@ import (
 	"fortis/pkg/utils"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,16 @@ func NewWalletController(dbClient db.Client) (*WalletController, error) {
 	}, nil
 }
 
+// getWalletProvider retrieves the appropriate wallet provider based on the request.
+func (c *WalletController) getWalletProvider(ctx *gin.Context) (wallet.Provider, error) {
+	switch ctx.Param("provider") {
+	case constants.DFNS:
+		return c.firstWalletProvider, nil
+	default:
+		return nil, fmt.Errorf("provider not found: %s", ctx.Param("provider"))
+	}
+}
+
 func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
 	// Record API counter and start time for instrumentation.
 	startTime := time.Now()
@@ -42,13 +53,11 @@ func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
 		return
 	}
 
-	var walletProvider wallet.Provider
-	switch ctx.Param("provider") {
-	case constants.DFNS:
-		walletProvider = c.firstWalletProvider
-	default:
+	// Determine wallet provider
+	walletProvider, err := c.getWalletProvider(ctx)
+	if err != nil {
 		utils.HandleError(ctx, http.StatusBadRequest,
-			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.RegisterUserHandlerV1, startTime)
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.RegisterUserHandlerV1, startTime)
 		return
 	}
 
@@ -60,22 +69,21 @@ func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
 		return
 	}
 
-	// User already present
+	// Handle existing user scenario
 	if userResponse.ExistingUser {
 		utils.HandleError(ctx, http.StatusConflict,
 			constants.ErrExistingUser, constants.ErrExistingUser, err, constants.RegisterUserHandlerV1, startTime)
 		return
 	}
 
-	// Return aggregated results
-	log.Println("Delegated user created successfully for: " + requestBody.Username)
+	// Log success and respond
+	log.Printf("Delegated user created successfully: %s", requestBody.Username)
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.RegisterUserHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.RegisterUserHandlerV1).Observe(time.Since(startTime).Seconds())
 
 	ctx.JSON(http.StatusOK, models.CreateUserResponse{
-		Result:              constants.SUCCESS,
-		Challenge:           userResponse.Challenge,
-		AuthenticationToken: userResponse.AuthenticationToken})
+		Result:    constants.SUCCESS,
+		Challenge: userResponse.Challenge})
 }
 
 func (c *WalletController) ActivateUserV1(ctx *gin.Context) {
@@ -88,29 +96,32 @@ func (c *WalletController) ActivateUserV1(ctx *gin.Context) {
 		return
 	}
 
-	var walletProvider wallet.Provider
-	switch ctx.Param("provider") {
-	case constants.DFNS:
-		walletProvider = c.firstWalletProvider
-	default:
+	// Determine wallet provider
+	walletProvider, err := c.getWalletProvider(ctx)
+	if err != nil {
 		utils.HandleError(ctx, http.StatusBadRequest,
-			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.ActivateUserHandlerV1, startTime)
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.RegisterUserHandlerV1, startTime)
 		return
 	}
 
 	// TODO: from headers
 	requestBody.UserID = constants.UserPrefix + requestBody.UserID
 
-	// Create wallet for the user
-	_, err := walletProvider.ActivateDelegatedUser(requestBody)
+	// Activate user
+	err = walletProvider.ActivateDelegatedUser(requestBody)
 	if err != nil {
-		utils.HandleError(ctx, http.StatusInternalServerError,
-			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.ActivateUserHandlerV1, startTime)
+		status := http.StatusInternalServerError
+		errCode := constants.ErrCreateWallet
+		if strings.Contains(err.Error(), constants.DuplicateUser) {
+			status = http.StatusConflict
+			errCode = constants.ErrExistingUser
+		}
+		utils.HandleError(ctx, status, errCode, errCode, err, constants.ActivateUserHandlerV1, startTime)
 		return
 	}
 
-	// Return aggregated results
-	log.Println("User successfully activated: " + requestBody.UserID)
+	// Log success and respond
+	log.Printf("User successfully activated: %s", requestBody.UserID)
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.ActivateUserHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.ActivateUserHandlerV1).Observe(time.Since(startTime).Seconds())
 
@@ -127,13 +138,11 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 		return
 	}
 
-	var walletProvider wallet.Provider
-	switch ctx.Param("provider") {
-	case constants.DFNS:
-		walletProvider = c.firstWalletProvider
-	default:
+	// Determine wallet provider
+	walletProvider, err := c.getWalletProvider(ctx)
+	if err != nil {
 		utils.HandleError(ctx, http.StatusBadRequest,
-			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.CreateWalletHandlerV1, startTime)
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.RegisterUserHandlerV1, startTime)
 		return
 	}
 
@@ -146,7 +155,7 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	}
 
 	// Successful wallet creation
-	log.Println("Wallet created successfully for user: " + requestBody.UserID)
+	log.Printf("Wallet successfully created for user: %s", requestBody.UserID)
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.CreateWalletHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.CreateWalletHandlerV1).Observe(time.Since(startTime).Seconds())
 
@@ -166,18 +175,16 @@ func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {
 		return
 	}
 
-	var walletProvider wallet.Provider
-	switch ctx.Param("provider") {
-	case constants.DFNS:
-		walletProvider = c.firstWalletProvider
-	default:
+	// Determine wallet provider
+	walletProvider, err := c.getWalletProvider(ctx)
+	if err != nil {
 		utils.HandleError(ctx, http.StatusBadRequest,
-			constants.ErrInvalidProvider, constants.ErrInvalidProvider, nil, constants.TransferAssetsHandlerV1, startTime)
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.RegisterUserHandlerV1, startTime)
 		return
 	}
 
 	// Transfer assets
-	_, err := walletProvider.TransferAssets(&requestBody)
+	_, err = walletProvider.TransferAssets(requestBody)
 	if err != nil {
 		utils.HandleError(ctx, http.StatusInternalServerError,
 			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.TransferAssetsHandlerV1, startTime)

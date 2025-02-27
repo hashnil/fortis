@@ -7,10 +7,9 @@ type CreateUserRequest struct {
 }
 
 type CreateUserResponse struct {
-	Result              string `json:"result"`
-	ExistingUser        bool   `json:"existing_user,omitempty"`
-	Challenge           string `json:"challenge,omitempty"`
-	AuthenticationToken string `json:"auth_token,omitempty"`
+	Result       string `json:"result"`
+	ExistingUser bool   `json:"existing_user,omitempty"`
+	Challenge    string `json:"challenge,omitempty"`
 }
 
 // --- User Activation --- //
