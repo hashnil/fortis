@@ -15,8 +15,8 @@ type CreateUserResponse struct {
 
 // --- User Activation --- //
 type ActivateUserRequest struct {
-	UserID         string                      `json:"user_id,omitempty"` // with prefix: us-
-	CredentialInfo []map[string]CredentialInfo `json:"credential_info" binding:"required"`
+	UserID         string                    `json:"user_id,omitempty"` // with prefix: us-
+	CredentialInfo map[string]CredentialInfo `json:"credential_info" binding:"required"`
 }
 
 type CredentialInfo struct {
@@ -35,8 +35,8 @@ type WalletRequest struct {
 }
 
 type WalletResponse struct {
-	Result    string              `json:"result"`
-	Addresses []map[string]string `json:"addresses,omitempty"`
+	Result    string            `json:"result"`
+	Addresses map[string]string `json:"addresses,omitempty"`
 }
 
 // --- Transactions --- //

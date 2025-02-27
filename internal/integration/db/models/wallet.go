@@ -8,7 +8,7 @@ type Wallet struct {
 	Provider  string    `gorm:"column:provider;type:varchar(50);not null;uniqueIndex:user_network_idx"` // Wallet provider (e.g., 'dfns', 'coinbase')
 	Network   string    `gorm:"column:network;type:varchar(50);not null;uniqueIndex:user_network_idx"`  // Blockchain network (e.g., 'Solana', 'Base', 'Matic')
 	Name      string    `gorm:"column:name;type:varchar(100)"`                                          // Wallet name (e.g., "My awesome wallet")
-	Address   string    `gorm:"column:address;type:varchar(255);not null"`                              // Blockchain wallet address
+	Address   string    `gorm:"column:address;type:varchar(255);not null;index"`                        // Blockchain wallet address
 	IsActive  bool      `gorm:"column:is_active;type:bool;default:true"`                                // Wallet status (true = Active)
 	Metadata  []byte    `gorm:"column:metadata;type:jsonb;not null"`                                    // Additional wallet metadata (stored as JSONB)
 	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`                                       // Record creation timestamp

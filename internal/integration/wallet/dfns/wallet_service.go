@@ -30,7 +30,7 @@ func (p *DFNSWalletProvider) CreateWallet(request models.WalletRequest) (*models
 		}
 
 		// Append wallet address to response
-		response.Addresses = append(response.Addresses, map[string]string{network: wallet.Address})
+		response.Addresses[network] = wallet.Address
 	}
 
 	return &response, nil
