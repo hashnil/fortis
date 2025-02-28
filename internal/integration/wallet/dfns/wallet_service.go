@@ -62,7 +62,7 @@ func (p *DFNSWalletProvider) createOrFetchWallet(dbUser dbmodels.User, network s
 	}
 
 	// Send API request to DFNS to create a new wallet
-	walletResponse, err := APIClient[models.DFNSWalletResponse](walletRequest, "POST", "/wallets", nil)
+	walletResponse, err := APIClient[models.DFNSWalletResponse](walletRequest, "POST", constants.CreateWalletsURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create wallet on DFNS for network %s: %w", network, err)
 	}

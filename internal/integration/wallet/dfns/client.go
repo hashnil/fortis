@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"fortis/entity/constants"
 	"fortis/infrastructure/config"
 	"io"
 	"net/http"
@@ -98,7 +99,7 @@ func APIClient[T any](request interface{}, httpMethod, URL string, userAuthToken
 	}
 
 	// Set additional headers for user-authenticated requests
-	if userAuthToken != nil {
+	if URL == constants.CompleteUserRegistrationURL {
 		req.Header.Set("x-dfns-useraction", "false")
 	}
 

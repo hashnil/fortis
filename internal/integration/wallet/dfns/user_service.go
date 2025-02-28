@@ -87,7 +87,7 @@ func (p *DFNSWalletProvider) registerDelegatedUser(username string) (*models.DFN
 		Kind:  "EndUser",
 		Email: username,
 	}
-	return APIClient[models.DFNSUserRegistrationResponse](userData, "POST", "/auth/registration/delegated", nil)
+	return APIClient[models.DFNSUserRegistrationResponse](userData, "POST", constants.DelegatedRegistrationURL, nil)
 }
 
 // restartDelegatedRegistration calls DFNS API to restart user registration.
@@ -96,7 +96,7 @@ func (p *DFNSWalletProvider) restartDelegatedRegistration(username string) (*mod
 		Kind:  "EndUser",
 		Email: username,
 	}
-	return APIClient[models.DFNSUserRegistrationResponse](userData, "POST", "/auth/registration/delegated/restart", nil)
+	return APIClient[models.DFNSUserRegistrationResponse](userData, "POST", constants.DelegatedRegistrationRestartURL, nil)
 }
 
 // ActivateDelegatedUser activates a user by completing their registration in DFNS.
@@ -168,5 +168,5 @@ func (p *DFNSWalletProvider) completeUserRegistration(
 	}
 
 	// Call the API to complete registration
-	return APIClient[models.DFNSCompleteUserRegistrationResponse](requestPayload, "POST", "/auth/registration", &tempAuthToken)
+	return APIClient[models.DFNSCompleteUserRegistrationResponse](requestPayload, "POST", constants.CompleteUserRegistrationURL, &tempAuthToken)
 }
