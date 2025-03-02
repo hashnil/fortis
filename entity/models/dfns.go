@@ -141,3 +141,38 @@ type DFNSTransactionResponse struct {
 type LoginToken struct {
 	Token string `json:"token"`
 }
+
+// UserActionSignatureChallengeRequest represents the payload to initiate a user action signature challenge.
+type UserActionSignatureChallengeRequest struct {
+	UserActionPayload    string `json:"userActionPayload"`    // JSON-encoded body of the request being signed
+	UserActionHTTPMethod string `json:"userActionHttpMethod"` // HTTP method of the request being signed (e.g., POST, PUT, DELETE, GET)
+	UserActionHTTPPath   string `json:"userActionHttpPath"`   // Path of the request being signed
+}
+
+// UserActionSignatureChallengeResponse represents the response for signing a user action.
+type UserActionSignatureChallengeResponse struct {
+	SupportedCredentialKinds []struct {
+		Kind                 string `json:"kind"`                 // "Fido2" or "Key"
+		Factor               string `json:"factor"`               // "first", "second", or "either"
+		RequiresSecondFactor bool   `json:"requiresSecondFactor"` // Indicates if second factor is required
+	} `json:"supportedCredentialKinds"`
+	Challenge                 string `json:"challenge"`                 // Unique challenge value
+	ChallengeIdentifier       string `json:"challengeIdentifier"`       // Temporary authentication token
+	ExternalAuthenticationUrl string `json:"externalAuthenticationUrl"` // Optional URL for cross-device signing
+	AllowCredentials          struct {
+		Key []struct {
+			Type string `json:"type"` // Always "public-key"
+			ID   string `json:"id"`   // Unique identifier for the credential
+		} `json:"key"`
+		PasswordProtectedKey []struct {
+			Type                string `json:"type"`                // Always "public-key"
+			ID                  string `json:"id"`                  // Unique identifier
+			EncryptedPrivateKey string `json:"encryptedPrivateKey"` // Encrypted private key
+		} `json:"passwordProtectedKey"`
+		WebAuthn []struct {
+			Type       string   `json:"type"`       // Always "public-key"
+			ID         string   `json:"id"`         // Unique identifier
+			Transports []string `json:"transports"` // Optional list of transports
+		} `json:"webauthn"`
+	} `json:"allowCredentials"`
+}

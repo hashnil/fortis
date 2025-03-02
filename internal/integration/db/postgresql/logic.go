@@ -33,6 +33,11 @@ func (db *PostgresSQLClient) CreateWallet(wallet models.Wallet) error {
 	return db.client.Create(&wallet).Error
 }
 
+// CreateInflightTransaction inserts a inflight transaction record.
+func (db *PostgresSQLClient) CreateInflightTransaction(inflightTransaction models.InflightTransaction) error {
+	return db.client.Create(&inflightTransaction).Error
+}
+
 // CreateTransactionLog stores a transaction log entry.
 func (db *PostgresSQLClient) CreateTransactionLog(transactionLog models.TransactionLog) error {
 	return db.client.Create(&transactionLog).Error

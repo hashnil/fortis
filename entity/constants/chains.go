@@ -12,6 +12,8 @@ const (
 	DelegatedLoginURL               = "/auth/login/delegated"
 	CreateWalletsURL                = "/wallets"
 	TransferAssetsURL               = "/wallets/%s/transfers"
+	UserActionSignatureChallengeURL = "/auth/action/init"
+	UserActionSignatureURL          = "/auth/action"
 )
 
 // TokenDecimals stores the decimal places for each token
@@ -21,3 +23,14 @@ var TokenDecimals = map[string]int{
 	"SOL":  9,
 	"ETH":  18,
 }
+
+type TransactionStatus string
+
+var (
+	Pending     TransactionStatus = "Pending"
+	Executing   TransactionStatus = "Executing"
+	Broadcasted TransactionStatus = "Broadcasted"
+	Confirmed   TransactionStatus = "Confirmed"
+	Failure     TransactionStatus = "Failure"
+	Rejected    TransactionStatus = "Rejected"
+)

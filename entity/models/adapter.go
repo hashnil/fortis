@@ -14,11 +14,12 @@ type CreateUserResponse struct {
 
 // --- User Activation --- //
 type ActivateUserRequest struct {
-	UserID         string                    `json:"user_id,omitempty"` // with prefix: us-
-	CredentialInfo map[string]CredentialInfo `json:"credential_info" binding:"required"`
+	UserID         string           `json:"user_id,omitempty"` // with prefix: us-
+	CredentialInfo []CredentialInfo `json:"credential_info" binding:"required"`
 }
 
 type CredentialInfo struct {
+	CredentialKind  string `json:"credential_kind" binding:"required"`
 	CredentialID    string `json:"credential_id" binding:"required"`
 	ClientData      string `json:"client_data" binding:"required"`
 	AttestationData string `json:"attestation_data" binding:"required"`

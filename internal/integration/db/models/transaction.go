@@ -1,17 +1,25 @@
 package models
 
-import "time"
+import (
+	"time"
 
-type TransactionStatus string
-
-var (
-	Pending     TransactionStatus = "Pending"
-	Executing   TransactionStatus = "Executing"
-	Broadcasted TransactionStatus = "Broadcasted"
-	Confirmed   TransactionStatus = "Confirmed"
-	Failure     TransactionStatus = "Failure"
-	Rejected    TransactionStatus = "Rejected"
+	"gorm.io/gorm"
 )
+
+type InflightTransaction struct {
+	Challenge            string         `gorm:"column:challenge;type:varchar(50);primaryKey"` // Unique identifier for the transaction
+	URL                  string         `gorm:"column:url;type:varchar(255)"`                 // Target URL for transaction processing
+	AuthToken            string         `gorm:"column:auth_token;type:varchar(255)"`          // User authentication token
+	TransferPayload      []byte         `gorm:"column:transfer_payload;type:jsonb"`           // Transaction request in JSONB format
+	UserChallengePayload []byte         `gorm:"column:user_challenge_payload;type:jsonb"`     // User's challenge response in JSONB format
+	CreatedAt            time.Time      `gorm:"column:created_at;autoCreateTime"`             // Record creation timestamp
+	UpdatedAt            time.Time      `gorm:"column:updated_at;autoUpdateTime"`             // Record update timestamp
+	DeletedAt            gorm.DeletedAt `gorm:"column:deleted_at;index"`                      // Soft delete timestamp
+}
+
+func (InflightTransaction) TableName() string {
+	return "inflight_transactions"
+}
 
 type TransactionLog struct {
 	ID              string    `gorm:"column:id;type:varchar(50);primaryKey"`
