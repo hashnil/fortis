@@ -23,6 +23,7 @@ func (p *DFNSWalletProvider) CreateWallet(request models.WalletRequest) (*models
 
 	// Iterate over configured networks and create/fetch wallets
 	var response models.WalletResponse
+	response.Addresses = make(map[string]string)
 	for _, network := range config.GetNetworks() {
 		wallet, err := p.createOrFetchWallet(dbUser, network)
 		if err != nil {

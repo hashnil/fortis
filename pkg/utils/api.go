@@ -24,5 +24,5 @@ func HandleError(ctx *gin.Context, statusCode int, logMessage, userMessage strin
 	log.Printf("%s: %v\n", logMessage, err)
 	instrumentation.FailureRequestCounter.WithLabelValues(handler, http.StatusText(statusCode)).Inc()
 	instrumentation.FailureLatency.WithLabelValues(handler, http.StatusText(statusCode)).Observe(time.Since(startTime).Seconds())
-	ctx.JSON(statusCode, gin.H{"error": userMessage})
+	ctx.JSON(statusCode, gin.H{"result": constants.FAILURE, "error": userMessage})
 }

@@ -9,7 +9,7 @@ type CreateUserRequest struct {
 type CreateUserResponse struct {
 	Result       string `json:"result"`
 	ExistingUser bool   `json:"existing_user,omitempty"`
-	Challenge    string `json:"challenge,omitempty"`
+	Challenge    string `json:"challenge"`
 }
 
 // --- User Activation --- //
@@ -35,19 +35,29 @@ type WalletRequest struct {
 
 type WalletResponse struct {
 	Result    string            `json:"result"`
-	Addresses map[string]string `json:"addresses,omitempty"`
+	Addresses map[string]string `json:"addresses"`
 }
 
 // --- Transactions --- //
-type TransactionRequest struct {
-	UserID      string `json:"user_id,omitempty"` // for from account identification; with prefix: us-
-	FromAccount string `json:"from_account,omitempty"`
-	ToAccount   string `json:"to_account"`
-	Amount      string `json:"amount"`
-	Denom       string `json:"denom"`
-	Fee         string `json:"fee"`
+type InitTransferRequest struct {
+	UserID    string `json:"user_id,omitempty"`             // Identifier for the sender with prefix (e.g., "us-")
+	ToAccount string `json:"to_account" binding:"required"` // Address of the receiver
+	Amount    string `json:"amount" binding:"required"`     // Transfer amount (in smallest unit)
+	Fee       string `json:"fee" binding:"required"`        // Transaction fee (in native token)
+	Denom     string `json:"denom" binding:"required"`      // Token/Currency type (e.g., "ETH", "BTC", "USDC")
+	Memo      string `json:"memo,omitempty"`                // Optional transaction note
 }
 
-type TransactionResponse struct {
+type InitTransferResponse struct {
+	Result    string            `json:"result"`
+	Challenge map[string]string `json:"challenge"`
+}
+
+type TransferRequest struct {
+	UserID         string                    `json:"user_id,omitempty"` // Identifier for the sender with prefix (e.g., "us-")
+	CredentialInfo map[string]CredentialInfo `json:"credential_info" binding:"required"`
+}
+
+type TransferResponse struct {
 	Result string `json:"result"`
 }

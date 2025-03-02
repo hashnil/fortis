@@ -10,6 +10,11 @@ db:
     host: "localhost"
     port: 5432
     sslmode: "disable"
+  redis:
+    host: ":6379"
+    pass: ""
+    index: 1
+    pool_size: 10
 wallet:
   dfns:
     app_id: "ap-3emun-drtc8-9oo0c42rsvf938n"
@@ -22,3 +27,11 @@ wallet:
     asset_transfer:
       primary_network: "SolanaDevnet"
       native_token: "Spl"
+    mint_address:
+      usdc: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+      usdt: "EJwZgeZrdC8TXTQbQBoL6bfuAnFUUy1PVCMB4DYPzVaS"
+  fees:
+    address: "6FQF5kbQNimCbyCL38jXwHgdKfaXsS5YPbu9f5fmk4Q2"
+auth:
+  nonce:
+    expiry: 120 # In seconds (2 minutes)

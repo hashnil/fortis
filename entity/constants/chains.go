@@ -13,3 +13,11 @@ const (
 	CreateWalletsURL                = "/wallets"
 	TransferAssetsURL               = "/wallets/%s/transfers"
 )
+
+// TokenDecimals stores the decimal places for each token
+var TokenDecimals = map[string]int{
+	"USDC": 6,
+	"USDT": 6,
+	"SOL":  9,
+	"ETH":  18,
+}

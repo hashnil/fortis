@@ -137,3 +137,7 @@ type DFNSTransactionResponse struct {
 	DateBroadcasted time.Time `json:"dateBroadcasted"`
 	DateConfirmed   time.Time `json:"dateConfirmed"`
 }
+
+type LoginToken struct {
+	Token string `json:"token"`
+}
