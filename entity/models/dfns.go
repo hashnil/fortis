@@ -138,6 +138,7 @@ type DFNSTransactionResponse struct {
 	DateConfirmed   time.Time `json:"dateConfirmed"`
 }
 
+// LoginToken represents the authentication token returned upon user login.
 type LoginToken struct {
 	Token string `json:"token"`
 }

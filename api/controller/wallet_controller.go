@@ -183,19 +183,20 @@ func (c *WalletController) InitTransferAssetsV1(ctx *gin.Context) {
 		return
 	}
 
-	// Transfer assets
-	_, err = walletProvider.InitTransferAssets(requestBody)
+	// Generate signing payloads (does not execute actual transfer)
+	signingPayload, err := walletProvider.InitTransferAssets(requestBody)
 	if err != nil {
 		utils.HandleError(ctx, http.StatusInternalServerError,
-			constants.ErrTransferAssets, constants.ErrTransferAssets, err, constants.InitTransferAssetsHandlerV1, startTime)
+			constants.ErrInitTransferAssets, constants.ErrInitTransferAssets, err, constants.InitTransferAssetsHandlerV1, startTime)
 		return
 	}
 
-	// Return aggregated results
-	log.Println("Assets successfully transfered for user: ")
+	// Log successful signing payload creation
+	log.Printf("Signing payloads created successfully for UserID: %s, Challenges: %+v\n", requestBody.UserID, signingPayload.Challenge)
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.InitTransferAssetsHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.InitTransferAssetsHandlerV1).Observe(time.Since(startTime).Seconds())
-	ctx.JSON(http.StatusOK, models.InitTransferResponse{Result: constants.SUCCESS})
+
+	ctx.JSON(http.StatusOK, models.InitTransferResponse{Result: constants.SUCCESS, Challenge: signingPayload.Challenge})
 }
 
 func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {

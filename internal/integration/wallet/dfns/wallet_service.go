@@ -8,6 +8,7 @@ import (
 	"fortis/infrastructure/config"
 	dbmodels "fortis/internal/integration/db/models"
 	"fortis/pkg/utils"
+	"log"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -15,6 +16,8 @@ import (
 
 // CreateWallet ensures the user exists and creates wallets for each configured network.
 func (p *DFNSWalletProvider) CreateWallet(request models.WalletRequest) (*models.WalletResponse, error) {
+	log.Printf("[INFO] CreateWallet: Initiating wallet creation for UserID: %s\n", request.UserID)
+
 	// Retrieve user details from the database
 	dbUser, err := p.dbClient.FindUserByID(request.UserID)
 	if err != nil {
@@ -25,10 +28,15 @@ func (p *DFNSWalletProvider) CreateWallet(request models.WalletRequest) (*models
 	var response models.WalletResponse
 	response.Addresses = make(map[string]string)
 	for _, network := range config.GetNetworks() {
+		log.Printf("[INFO] CreateWallet: Processing wallet for User: %s, Network: %s\n", dbUser.Name, network)
+
 		wallet, err := p.createOrFetchWallet(dbUser, network)
 		if err != nil {
 			return nil, fmt.Errorf("failed to process wallet for network %s: %w", network, err)
 		}
+
+		log.Printf("[INFO] CreateWallet: Wallet successfully processed for User: %s, Network: %s, Address: %s\n",
+			dbUser.Name, network, wallet.Address)
 
 		// Append wallet address to response
 		response.Addresses[network] = wallet.Address
@@ -49,6 +57,9 @@ func (p *DFNSWalletProvider) createOrFetchWallet(dbUser dbmodels.User, network s
 		return nil, fmt.Errorf("error retrieving wallet from DB: %w", err)
 	}
 
+	log.Printf("[INFO] createOrFetchWallet: No existing wallet found. Creating new wallet for User: %s, Network: %s\n",
+		dbUser.Name, network)
+
 	// Extract DFNS user details from stored metadata
 	var userResponse models.DFNSUserRegistrationResponse
 	if err := json.Unmarshal(dbUser.Metadata, &userResponse); err != nil {
@@ -67,6 +78,9 @@ func (p *DFNSWalletProvider) createOrFetchWallet(dbUser dbmodels.User, network s
 	if err != nil {
 		return nil, fmt.Errorf("failed to create wallet on DFNS for network %s: %w", network, err)
 	}
+
+	log.Printf("[INFO] createOrFetchWallet: Successfully created wallet on DFNS for User: %s, Network: %s, Address: %s\n",
+		dbUser.Name, network, walletResponse.Address)
 
 	// Construct wallet model for database storage
 	newWallet := dbmodels.Wallet{

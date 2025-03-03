@@ -14,6 +14,10 @@ const (
 	TransferAssetsURL               = "/wallets/%s/transfers"
 	UserActionSignatureChallengeURL = "/auth/action/init"
 	UserActionSignatureURL          = "/auth/action"
+
+	// Transfer challenge keys
+	FundTransferChallenge = "fundTransfer"
+	FeeTransferChallenge  = "feeTransfer"
 )
 
 // TokenDecimals stores the decimal places for each token

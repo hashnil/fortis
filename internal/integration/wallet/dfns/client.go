@@ -99,7 +99,7 @@ func APIClient[T any](request interface{}, httpMethod, URL string, userAuthToken
 	}
 
 	// Set additional headers for user-authenticated requests
-	if URL == constants.CompleteUserRegistrationURL {
+	if URL == constants.CompleteUserRegistrationURL || URL == constants.UserActionSignatureChallengeURL {
 		req.Header.Set("x-dfns-useraction", "false")
 	}
 

@@ -9,7 +9,7 @@ import (
 type InflightTransaction struct {
 	Challenge            string         `gorm:"column:challenge;type:varchar(50);primaryKey"` // Unique identifier for the transaction
 	URL                  string         `gorm:"column:url;type:varchar(255)"`                 // Target URL for transaction processing
-	AuthToken            string         `gorm:"column:auth_token;type:varchar(255)"`          // User authentication token
+	AuthToken            string         `gorm:"column:auth_token;type:varchar(1024)"`         // User authentication token
 	TransferPayload      []byte         `gorm:"column:transfer_payload;type:jsonb"`           // Transaction request in JSONB format
 	UserChallengePayload []byte         `gorm:"column:user_challenge_payload;type:jsonb"`     // User's challenge response in JSONB format
 	CreatedAt            time.Time      `gorm:"column:created_at;autoCreateTime"`             // Record creation timestamp
