@@ -55,6 +55,7 @@ func (p *DFNSWalletProvider) InitTransferAssets(request models.InitTransferReque
 
 	log.Printf("[INFO] Successfully initialized asset transfer for user: %s", request.UserID)
 	return &models.InitTransferResponse{
+		Result: constants.SUCCESS,
 		Challenge: map[string]string{
 			constants.FundTransferChallenge: inflightTxn.Challenge,
 			constants.FeeTransferChallenge:  inflightFeeTxn.Challenge,
@@ -163,4 +164,8 @@ func (p *DFNSWalletProvider) handleTransactionChallenge(
 	log.Printf("[INFO] Transaction challenge saved successfully")
 
 	return inflightTxn, nil
+}
+
+func (p *DFNSWalletProvider) TransferAssets(request models.TransferRequest) (*models.TransferResponse, error) {
+	return nil, nil
 }

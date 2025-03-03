@@ -77,7 +77,7 @@ func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
 	}
 
 	// Log success and respond
-	log.Printf("Delegated user created successfully: %s", requestBody.Username)
+	log.Printf("[CreateDelegatedUserV1] Delegated user created successfully: %s\n", requestBody.Username)
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.RegisterUserHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.RegisterUserHandlerV1).Observe(time.Since(startTime).Seconds())
 
@@ -121,7 +121,7 @@ func (c *WalletController) ActivateUserV1(ctx *gin.Context) {
 	}
 
 	// Log success and respond
-	log.Printf("User successfully activated: %s", requestBody.UserID)
+	log.Printf("[ActivateUserV1] User successfully activated: %s\n", requestBody.UserID)
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.ActivateUserHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.ActivateUserHandlerV1).Observe(time.Since(startTime).Seconds())
 
@@ -155,7 +155,7 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	}
 
 	// Successful wallet creation
-	log.Printf("Wallet successfully created for user: %s", requestBody.UserID)
+	log.Printf("[CreateWalletV1] Wallets %+v successfully created for user: %s\n", walletResponse.Addresses, requestBody.UserID)
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.CreateWalletHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.CreateWalletHandlerV1).Observe(time.Since(startTime).Seconds())
 
@@ -192,42 +192,47 @@ func (c *WalletController) InitTransferAssetsV1(ctx *gin.Context) {
 	}
 
 	// Log successful signing payload creation
-	log.Printf("Signing payloads created successfully for UserID: %s, Challenges: %+v\n", requestBody.UserID, signingPayload.Challenge)
+	log.Printf("[InitTransferAssetsV1] Signing payloads created successfully for UserID: %s, Challenges: %+v\n",
+		requestBody.UserID, signingPayload.Challenge)
 	instrumentation.SuccessRequestCounter.WithLabelValues(constants.InitTransferAssetsHandlerV1).Inc()
 	instrumentation.SuccessLatency.WithLabelValues(constants.InitTransferAssetsHandlerV1).Observe(time.Since(startTime).Seconds())
 
-	ctx.JSON(http.StatusOK, models.InitTransferResponse{Result: constants.SUCCESS, Challenge: signingPayload.Challenge})
+	ctx.JSON(http.StatusOK, signingPayload)
 }
 
 func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {
-	// // Record API counter and start time for instrumentation.
-	// startTime := time.Now()
-	// instrumentation.RequestCounter.WithLabelValues(constants.TransferAssetsHandlerV1).Inc()
+	// Record API counter and start time for instrumentation.
+	startTime := time.Now()
+	instrumentation.RequestCounter.WithLabelValues(constants.TransferAssetsHandlerV1).Inc()
 
-	// var requestBody models.TransferRequest
-	// if !utils.BindRequest(ctx, &requestBody, constants.TransferAssetsHandlerV1, startTime) {
-	// 	return
-	// }
+	var requestBody models.TransferRequest
+	if !utils.BindRequest(ctx, &requestBody, constants.TransferAssetsHandlerV1, startTime) {
+		return
+	}
 
-	// // Determine wallet provider
-	// walletProvider, err := c.getWalletProvider(ctx)
-	// if err != nil {
-	// 	utils.HandleError(ctx, http.StatusBadRequest,
-	// 		constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.TransferAssetsHandlerV1, startTime)
-	// 	return
-	// }
+	// Determine wallet provider
+	walletProvider, err := c.getWalletProvider(ctx)
+	if err != nil {
+		utils.HandleError(ctx, http.StatusBadRequest,
+			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.TransferAssetsHandlerV1, startTime)
+		return
+	}
 
-	// // Transfer assets
-	// _, err = walletProvider.TransferAssets(requestBody)
-	// if err != nil {
-	// 	utils.HandleError(ctx, http.StatusInternalServerError,
-	// 		constants.ErrTransferAssets, constants.ErrTransferAssets, err, constants.TransferAssetsHandlerV1, startTime)
-	// 	return
-	// }
+	// Transfer assets
+	transferResponse, err := walletProvider.TransferAssets(requestBody)
+	if err != nil {
+		utils.HandleError(ctx, http.StatusInternalServerError,
+			constants.ErrTransferAssets, constants.ErrTransferAssets, err, constants.TransferAssetsHandlerV1, startTime)
+		return
+	}
 
-	// // Return aggregated results
-	// log.Println("Assets successfully transfered for user: ")
-	// instrumentation.SuccessRequestCounter.WithLabelValues(constants.TransferAssetsHandlerV1).Inc()
-	// instrumentation.SuccessLatency.WithLabelValues(constants.TransferAssetsHandlerV1).Observe(time.Since(startTime).Seconds())
-	// ctx.JSON(http.StatusOK, models.TransferResponse{Result: constants.SUCCESS})
+	// Log successful asset transfer
+	log.Printf("[TransferAssetsV1] Assets successfully transferred! UTR: %s, ReceiverID: %s, Amount: %s %s, Fee: %s, TxHash: %s, Network: %s, ReceiverAddress: %s\n",
+		transferResponse.UTR, transferResponse.ReceiverID, transferResponse.Amount, transferResponse.Denom, transferResponse.Fee,
+		transferResponse.TxInfo.TxHash, transferResponse.TxInfo.Network, transferResponse.TxInfo.ReceiverAddress)
+
+	instrumentation.SuccessRequestCounter.WithLabelValues(constants.TransferAssetsHandlerV1).Inc()
+	instrumentation.SuccessLatency.WithLabelValues(constants.TransferAssetsHandlerV1).Observe(time.Since(startTime).Seconds())
+
+	ctx.JSON(http.StatusOK, transferResponse)
 }

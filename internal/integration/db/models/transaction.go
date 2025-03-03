@@ -31,9 +31,9 @@ type TransactionLog struct {
 	Denom           string    `gorm:"column:denom;type:varchar(50);not null"`
 	Provider        string    `gorm:"column:provider;type:varchar(50);not null"`
 	Network         string    `gorm:"column:network;type:varchar(50);not null"`
+	TypeFee         bool      `gorm:"column:type_fee;type:bool;default:false"`
 	Status          string    `gorm:"column:status;type:varchar(50);not null"`
-	FeeType         bool      `gorm:"column:fee_type;type:bool;default:false"`
-	Retries         int       `gorm:"column:retries;type:int;default:0"`
+	FailureReason   string    `gorm:"column:failure_reason;type:varchar(1024)"`
 	TxHash          string    `gorm:"column:tx_hash;type:varchar(255)"`
 	UTR             string    `gorm:"column:utr;type:varchar(255);not null"`
 	TxMeta          []byte    `gorm:"column:tx_meta;type:jsonb"`

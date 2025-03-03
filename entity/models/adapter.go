@@ -60,5 +60,16 @@ type TransferRequest struct {
 }
 
 type TransferResponse struct {
-	Result string `json:"result"`
+	Result     string `json:"result"`
+	ReceiverID string `json:"receiver_id"`
+	Amount     string `json:"amount"`
+	Fee        string `json:"fee"`
+	Denom      string `json:"denom"`
+	UTR        string `json:"utr"`
+	Remarks    string `json:"remarks,omitempty"`
+	TxInfo     struct {
+		ReceiverAddress string `json:"receiver_address"`
+		Network         string `json:"network"`
+		TxHash          string `json:"tx_hash"`
+	} `json:"tx_info"`
 }
