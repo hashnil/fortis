@@ -8,6 +8,7 @@ import (
 	"fortis/entity/models"
 	dbmodels "fortis/internal/integration/db/models"
 	"fortis/pkg/utils"
+	"log"
 	"strings"
 
 	"gorm.io/gorm"
@@ -63,6 +64,7 @@ func (p *DFNSWalletProvider) registerOrFetchUser(request models.CreateUserReques
 			return nil, fmt.Errorf("failed to update user in DB: %w", err)
 		}
 
+		log.Println("[INFO] Successfully restarted registration for:", request.Username)
 		return refreshedUserResponse, nil
 	}
 
@@ -78,6 +80,7 @@ func (p *DFNSWalletProvider) registerOrFetchUser(request models.CreateUserReques
 		return nil, fmt.Errorf("failed to store user in DB: %w", err)
 	}
 
+	log.Println("[INFO] Successfully registered new user:", request.Username)
 	return userResponse, nil
 }
 
@@ -137,36 +140,59 @@ func (p *DFNSWalletProvider) ActivateDelegatedUser(request models.ActivateUserRe
 
 // completeUserRegistration finalizes the registration process by submitting credentials.
 func (p *DFNSWalletProvider) completeUserRegistration(
-	credentials map[string]models.CredentialInfo, tempAuthToken string,
+	credentials []models.CredentialInfo, tempAuthToken string,
 ) (*models.DFNSCompleteUserRegistrationResponse, error) {
-	// Validate that required credentials are provided
-	requiredKeys := []string{"Fido2", "Key"}
-	for _, key := range requiredKeys {
-		if _, exists := credentials[key]; !exists {
-			return nil, fmt.Errorf("missing required credential: %s", key)
-		}
+	// Ensure at least one credential is provided
+	if len(credentials) == 0 || len(credentials) > 2 {
+		return nil, fmt.Errorf("invalid number of credentials provided, must be 1 or 2")
 	}
 
 	// Construct request payload for completing user registration
-	requestPayload := map[string]interface{}{
-		"firstFactorCredential": map[string]interface{}{
-			"credentialKind": "Fido2",
+	requestPayload := map[string]interface{}{}
+
+	if len(credentials) == 1 {
+		requestPayload["firstFactorCredential"] = map[string]interface{}{
+			"credentialKind": credentials[0].CredentialKind,
 			"credentialInfo": map[string]string{
-				"credId":          credentials["Fido2"].CredentialID,
-				"clientData":      credentials["Fido2"].ClientData,
-				"attestationData": credentials["Fido2"].AttestationData,
+				"credId":          credentials[0].CredentialID,
+				"clientData":      credentials[0].ClientData,
+				"attestationData": credentials[0].AttestationData,
 			},
-		},
-		"secondFactorCredential": map[string]interface{}{
-			"credentialKind": "Key",
+		}
+	} else if len(credentials) == 2 {
+		// Ensure Fido2 is the first factor and Key is the second factor
+		var firstFactor, secondFactor *models.CredentialInfo
+		for _, cred := range credentials {
+			if strings.ToLower(cred.CredentialKind) == "fido2" {
+				firstFactor = &cred
+			} else if strings.ToLower(cred.CredentialKind) == "key" {
+				secondFactor = &cred
+			}
+		}
+
+		if firstFactor == nil || secondFactor == nil {
+			return nil, fmt.Errorf("must provide both Fido2 and Key credentials in order")
+		}
+
+		requestPayload["firstFactorCredential"] = map[string]interface{}{
+			"credentialKind": firstFactor.CredentialKind,
 			"credentialInfo": map[string]string{
-				"credId":          credentials["Key"].CredentialID,
-				"clientData":      credentials["Key"].ClientData,
-				"attestationData": credentials["Key"].AttestationData,
+				"credId":          firstFactor.CredentialID,
+				"clientData":      firstFactor.ClientData,
+				"attestationData": firstFactor.AttestationData,
 			},
-		},
+		}
+
+		requestPayload["secondFactorCredential"] = map[string]interface{}{
+			"credentialKind": secondFactor.CredentialKind,
+			"credentialInfo": map[string]string{
+				"credId":          secondFactor.CredentialID,
+				"clientData":      secondFactor.ClientData,
+				"attestationData": secondFactor.AttestationData,
+			},
+		}
 	}
 
 	// Call the API to complete registration
-	return APIClient[models.DFNSCompleteUserRegistrationResponse](requestPayload, "POST", constants.CompleteUserRegistrationURL, &tempAuthToken)
+	return APIClient[models.DFNSCompleteUserRegistrationResponse](requestPayload, "POST", "/auth/registration", &tempAuthToken)
 }

@@ -7,5 +7,5 @@ type Provider interface {
 	ActivateDelegatedUser(models.ActivateUserRequest) error
 	CreateWallet(models.WalletRequest) (*models.WalletResponse, error)
 	InitTransferAssets(models.InitTransferRequest) (*models.InitTransferResponse, error)
-	// TransferAssets(models.TransferRequest) (*models.TransferResponse, error)
+	TransferAssets(models.TransferRequest) (*models.TransferResponse, error)
 }
