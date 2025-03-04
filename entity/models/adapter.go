@@ -22,7 +22,9 @@ type CredentialInfo struct {
 	CredentialKind  string `json:"credential_kind" binding:"required"`
 	CredentialID    string `json:"credential_id" binding:"required"`
 	ClientData      string `json:"client_data" binding:"required"`
-	AttestationData string `json:"attestation_data" binding:"required"`
+	AttestationData string `json:"attestation_data" binding:"required"` // Authentication data
+	Signature       string `json:"signature"`
+	UserHandle      string `json:"user_handle"`
 }
 
 type ActivateUserResponse struct {

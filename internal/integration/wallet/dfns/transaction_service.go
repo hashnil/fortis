@@ -1,7 +1,6 @@
 package dfns
 
 import (
-	"encoding/json"
 	"fmt"
 	"fortis/entity/constants"
 	"fortis/entity/models"
@@ -9,6 +8,7 @@ import (
 	"fortis/pkg/utils"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -33,22 +33,15 @@ func (p *DFNSWalletProvider) InitTransferAssets(request models.InitTransferReque
 		return nil, fmt.Errorf("failed to retrieve receiver wallet %s: %w", request.ToAccount, err)
 	}
 
-	// Extract sender wallet ID
-	var senderWalletInfo models.DFNSWalletResponse
-	if err := json.Unmarshal(senderWallet.Metadata, &senderWalletInfo); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal")
-	}
-	senderWalletID := senderWalletInfo.ID
-
 	// Process Fund Transfer
-	inflightTxn, err := p.handleTransactionChallenge(request.Amount, request.Denom, recipientWallet.Address, senderWalletID, loginInfo.Token)
+	inflightTxn, err := p.handleTransactionChallenge(request, senderWallet, recipientWallet.Address, loginInfo.Token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to process fund transfer: %w", err)
 	}
 
 	// Process Fee Transfer
 	feeRecipient := viper.GetString("wallet.fees.address")
-	inflightFeeTxn, err := p.handleTransactionChallenge(request.Fee, request.Denom, feeRecipient, senderWalletID, loginInfo.Token)
+	inflightFeeTxn, err := p.handleTransactionChallenge(request, senderWallet, feeRecipient, loginInfo.Token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to process fee transfer: %w", err)
 	}
@@ -61,35 +54,6 @@ func (p *DFNSWalletProvider) InitTransferAssets(request models.InitTransferReque
 			constants.FeeTransferChallenge:  inflightFeeTxn.Challenge,
 		},
 	}, nil
-	// // Broadcast the transaction
-	// txResponse, err := APIClient[models.DFNSTransactionResponse](txRequest, "POST", fmt.Sprintf(constants.TransferAssetsURL, senderWalletID), &authToken.Token)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to broadcast transaction: %w", err)
-	// }
-
-	// transactionLog := dbmodels.TransactionLog{
-	// 	ID:              fmt.Sprintf("tx-%d", time.Now().UnixNano()),
-	// 	SenderName:      sender.Name,
-	// 	SenderAddress:   senderWallet.Address,
-	// 	ReceiverName:    request.ToAccount,
-	// 	ReceiverAddress: recipientWallet.Address,
-	// 	Amount:          request.Amount,
-	// 	Denom:           request.Denom,
-	// 	Provider:        constants.DFNS,
-	// 	Network:         viper.GetString("wallet.dfns.asset_transfer.primary_network"),
-	// 	FeeType:         false,
-	// 	Status:          txResponse.Status,
-	// 	TxHash:          txResponse.TxHash,
-	// 	TxMeta:          utils.MarshalToJSON(txResponse),
-	// 	UTR:             generateUTR(),
-	// }
-	// if err := p.dbClient.CreateTransactionLog(transactionLog); err != nil {
-	// 	return nil, fmt.Errorf("failed to create transaction log before broadcasting the transaction: %w", err)
-	// }
-
-	// fmt.Println("txResponse: ", txResponse)
-
-	// return nil, nil
 }
 
 // getUserAndLoginInfo retrieves user details and login token
@@ -126,12 +90,17 @@ func createTransferRequest(amount string, denom string, recipient string) (model
 
 // handleTransactionChallenge manages the challenge process
 func (p *DFNSWalletProvider) handleTransactionChallenge(
-	amount, denom, recipient, senderWalletID, authToken string,
+	request models.InitTransferRequest, senderWallet dbmodels.Wallet, recipient, authToken string,
 ) (*dbmodels.InflightTransaction, error) {
-	log.Printf("[INFO] Creating transfer request for %s %s to %s", amount, denom, recipient)
+	log.Printf("[INFO] Creating transfer request for %s %s to %s", request.Amount, request.Denom, recipient)
+
+	// Extract sender wallet ID
+	var senderWalletInfo models.DFNSWalletResponse
+	utils.UnmarshalFromJSON(senderWallet.Metadata, &senderWalletInfo)
+	senderWalletID := senderWalletInfo.ID
 
 	// Create transaction request
-	txRequest, err := createTransferRequest(amount, denom, recipient)
+	txRequest, err := createTransferRequest(request.Amount, request.Denom, recipient)
 	if err != nil {
 		return nil, err
 	}
@@ -152,10 +121,13 @@ func (p *DFNSWalletProvider) handleTransactionChallenge(
 	// Save transaction payload
 	inflightTxn := &dbmodels.InflightTransaction{
 		Challenge:            txChallengeResponse.Challenge,
+		ChallengeIdentifier:  txChallengeResponse.ChallengeIdentifier,
 		URL:                  txUserChallengePayload.UserActionHTTPPath,
 		AuthToken:            authToken,
+		RequestPayload:       utils.MarshalToJSON(request),
 		TransferPayload:      utils.MarshalToJSON(txRequest),
 		UserChallengePayload: utils.MarshalToJSON(txChallengeResponse),
+		SenderInfo:           utils.MarshalToJSON(senderWallet),
 	}
 
 	if err := p.dbClient.CreateInflightTransaction(*inflightTxn); err != nil {
@@ -167,5 +139,85 @@ func (p *DFNSWalletProvider) handleTransactionChallenge(
 }
 
 func (p *DFNSWalletProvider) TransferAssets(request models.TransferRequest) (*models.TransferResponse, error) {
+	// Basis challenge get the inflight transaction from database
+	for challenge, credentials := range request.CredentialInfo {
+		inflightTx, err := p.dbClient.GetInflightTransaction(challenge)
+		if err != nil {
+			return nil, err
+		}
+
+		userActionPayload := models.UserActionSigningRequest{
+			ChallengeIdentifier: inflightTx.ChallengeIdentifier,
+			FirstFactor: struct {
+				Kind                string "json:\"kind\""
+				CredentialAssertion struct {
+					CredID            string "json:\"credId\""
+					ClientData        string "json:\"clientData\""
+					AuthenticatorData string "json:\"authenticatorData\""
+					Signature         string "json:\"signature\""
+					UserHandle        string "json:\"userHandle\""
+				} "json:\"credentialAssertion\""
+			}{
+				Kind: credentials.CredentialKind,
+				CredentialAssertion: struct {
+					CredID            string "json:\"credId\""
+					ClientData        string "json:\"clientData\""
+					AuthenticatorData string "json:\"authenticatorData\""
+					Signature         string "json:\"signature\""
+					UserHandle        string "json:\"userHandle\""
+				}{
+					CredID:            credentials.CredentialID,
+					ClientData:        credentials.ClientData,
+					AuthenticatorData: credentials.AttestationData,
+					Signature:         credentials.Signature,
+					UserHandle:        credentials.UserHandle,
+				},
+			},
+		}
+
+		// Call user action signature API
+		userActionResponse, err := APIClient[models.UserActionSigningResponse](userActionPayload, "POST", constants.UserActionSignatureChallengeURL, &inflightTx.AuthToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initiate user action signature challenge: %w", err)
+		}
+
+		var (
+			transferRequest models.DFNSTransactionRequest
+			request         models.InitTransferRequest
+			senderWallet    dbmodels.Wallet
+		)
+		utils.UnmarshalFromJSON(inflightTx.RequestPayload, &request)
+		utils.UnmarshalFromJSON(inflightTx.TransferPayload, &transferRequest)
+		utils.UnmarshalFromJSON(inflightTx.SenderInfo, &senderWallet)
+
+		// Call transfer assets API
+		// Broadcast the transaction
+		txResponse, err := APIClient[models.DFNSTransactionResponse](transferRequest, "POST", inflightTx.URL, &userActionResponse.UserAction)
+		if err != nil {
+			return nil, fmt.Errorf("failed to broadcast transaction: %w", err)
+		}
+
+		transactionLog := dbmodels.TransactionLog{
+			ID:              fmt.Sprintf("tx-%d", time.Now().UnixNano()),
+			SenderName:      senderWallet.Name,
+			SenderAddress:   senderWallet.Address,
+			ReceiverName:    request.ToAccount,
+			ReceiverAddress: txResponse.RequestBody.To,
+			Amount:          request.Amount,
+			Denom:           request.Denom,
+			Provider:        constants.DFNS,
+			Network:         txResponse.Network,
+			TypeFee:         txResponse.Fee != "",
+			Status:          txResponse.Status,
+			TxHash:          txResponse.TxHash,
+			TxMeta:          utils.MarshalToJSON(txResponse),
+			UTR:             utils.GenerateUTR(),
+		}
+		if err := p.dbClient.CreateTransactionLog(transactionLog); err != nil {
+			return nil, fmt.Errorf("failed to create transaction log before broadcasting the transaction: %w", err)
+		}
+
+		fmt.Println("txResponse: ", txResponse)
+	}
 	return nil, nil
 }

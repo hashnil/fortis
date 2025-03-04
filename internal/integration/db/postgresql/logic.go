@@ -38,6 +38,13 @@ func (db *PostgresSQLClient) CreateInflightTransaction(inflightTransaction model
 	return db.client.Create(&inflightTransaction).Error
 }
 
+// GetInflightTransaction fetches an inflight transaction by their unique challenge identifier.
+func (db *PostgresSQLClient) GetInflightTransaction(challenge string) (models.InflightTransaction, error) {
+	var inflightTransaction models.InflightTransaction
+	err := db.client.First(&inflightTransaction, "challenge = ?", challenge).Error
+	return inflightTransaction, err
+}
+
 // CreateTransactionLog stores a transaction log entry.
 func (db *PostgresSQLClient) CreateTransactionLog(transactionLog models.TransactionLog) error {
 	return db.client.Create(&transactionLog).Error

@@ -177,3 +177,33 @@ type UserActionSignatureChallengeResponse struct {
 		} `json:"webauthn"`
 	} `json:"allowCredentials"`
 }
+
+// UserActionSigningRequest represents the request payload for completing user action signing.
+type UserActionSigningRequest struct {
+	ChallengeIdentifier string `json:"challengeIdentifier"` // Unique identifier for the challenge
+	FirstFactor         struct {
+		Kind                string `json:"kind"` // Type of credential, e.g., "Fido2"
+		CredentialAssertion struct {
+			CredID            string `json:"credId"`            // Credential ID
+			ClientData        string `json:"clientData"`        // Base64-encoded client data
+			AuthenticatorData string `json:"authenticatorData"` // Base64-encoded authenticator data
+			Signature         string `json:"signature"`         // Digital signature for authentication
+			UserHandle        string `json:"userHandle"`        // User identifier
+		} `json:"credentialAssertion"`
+	} `json:"firstFactor"`
+	SecondFactor struct {
+		Kind                string `json:"kind"` // Type of credential, e.g., "Key"
+		CredentialAssertion struct {
+			CredID            string `json:"credId"`            // Credential ID
+			ClientData        string `json:"clientData"`        // Base64-encoded client data
+			AuthenticatorData string `json:"authenticatorData"` // Base64-encoded authenticator data
+			Signature         string `json:"signature"`         // Digital signature for authentication
+			UserHandle        string `json:"userHandle"`        // User identifier
+		} `json:"credentialAssertion"`
+	} `json:"secondFactor"`
+}
+
+// UserActionSigningResponse gets the user action signature
+type UserActionSigningResponse struct {
+	UserAction string `json:"userAction"`
+}
