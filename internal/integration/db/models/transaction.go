@@ -7,17 +7,17 @@ import (
 )
 
 type InflightTransaction struct {
-	Challenge            string         `gorm:"column:challenge;type:varchar(50);primaryKey"`   // Unique identifier for the transaction
-	ChallengeIdentifier  string         `gorm:"column:challenge_identifier;type:varchar(1024)"` // Unique challenge identifier
-	URL                  string         `gorm:"column:url;type:varchar(255)"`                   // Target URL for transaction processing
-	AuthToken            string         `gorm:"column:auth_token;type:varchar(1024)"`           // User authentication token
-	RequestPayload       []byte         `gorm:"column:request_payload;type:jsonb"`              // Transfer request in JSONB format
-	TransferPayload      []byte         `gorm:"column:transfer_payload;type:jsonb"`             // Transaction request in JSONB format
-	UserChallengePayload []byte         `gorm:"column:user_challenge_payload;type:jsonb"`       // User's challenge response in JSONB format
-	SenderInfo           []byte         `gorm:"column:sender_info;type:jsonb"`                  // Sender information in JSONB format
-	CreatedAt            time.Time      `gorm:"column:created_at;autoCreateTime"`               // Record creation timestamp
-	UpdatedAt            time.Time      `gorm:"column:updated_at;autoUpdateTime"`               // Record update timestamp
-	DeletedAt            gorm.DeletedAt `gorm:"column:deleted_at;index"`                        // Soft delete timestamp
+	Challenge            string         `gorm:"column:challenge;type:varchar(50);primaryKey"` // Unique identifier for the transaction
+	ChallengeIdentifier  string         `gorm:"column:challenge_identifier;type:text"`        // Unique challenge identifier
+	URL                  string         `gorm:"column:url;type:varchar(255)"`                 // Target URL for transaction processing
+	AuthToken            string         `gorm:"column:auth_token;type:text"`                  // User authentication token
+	RequestPayload       []byte         `gorm:"column:request_payload;type:jsonb"`            // Transfer request in JSONB format
+	TransferPayload      []byte         `gorm:"column:transfer_payload;type:jsonb"`           // Transaction request in JSONB format
+	UserChallengePayload []byte         `gorm:"column:user_challenge_payload;type:jsonb"`     // User's challenge response in JSONB format
+	SenderInfo           []byte         `gorm:"column:sender_info;type:jsonb"`                // Sender information in JSONB format
+	CreatedAt            time.Time      `gorm:"column:created_at;autoCreateTime"`             // Record creation timestamp
+	UpdatedAt            time.Time      `gorm:"column:updated_at;autoUpdateTime"`             // Record update timestamp
+	DeletedAt            gorm.DeletedAt `gorm:"column:deleted_at;index"`                      // Soft delete timestamp
 }
 
 func (InflightTransaction) TableName() string {

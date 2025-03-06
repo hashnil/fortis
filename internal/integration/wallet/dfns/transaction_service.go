@@ -1,6 +1,7 @@
 package dfns
 
 import (
+	"errors"
 	"fmt"
 	"fortis/entity/constants"
 	"fortis/entity/models"
@@ -20,7 +21,7 @@ func (p *DFNSWalletProvider) InitTransferAssets(request models.InitTransferReque
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[INFO] User and login info fetched for user: %s, login token: %s", sender.Name, loginInfo.Token)
+	log.Printf("[INFO] User and login info fetched for user: %s", sender.Name)
 
 	// Retrieve Wallets - Sender & Receiver
 	primaryNetwork := viper.GetString("wallet.dfns.asset_transfer.primary_network")
@@ -34,14 +35,14 @@ func (p *DFNSWalletProvider) InitTransferAssets(request models.InitTransferReque
 	}
 
 	// Process Fund Transfer
-	inflightTxn, err := p.handleTransactionChallenge(request, senderWallet, recipientWallet.Address, loginInfo.Token)
+	inflightFundTxn, err := p.handleTransactionChallenge(request, senderWallet, recipientWallet.Address, request.Amount, loginInfo.Token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to process fund transfer: %w", err)
 	}
 
 	// Process Fee Transfer
 	feeRecipient := viper.GetString("wallet.fees.address")
-	inflightFeeTxn, err := p.handleTransactionChallenge(request, senderWallet, feeRecipient, loginInfo.Token)
+	inflightFeeTxn, err := p.handleTransactionChallenge(request, senderWallet, feeRecipient, request.Fee, loginInfo.Token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to process fee transfer: %w", err)
 	}
@@ -50,7 +51,7 @@ func (p *DFNSWalletProvider) InitTransferAssets(request models.InitTransferReque
 	return &models.InitTransferResponse{
 		Result: constants.SUCCESS,
 		Challenge: map[string]string{
-			constants.FundTransferChallenge: inflightTxn.Challenge,
+			constants.FundTransferChallenge: inflightFundTxn.Challenge,
 			constants.FeeTransferChallenge:  inflightFeeTxn.Challenge,
 		},
 	}, nil
@@ -63,7 +64,7 @@ func (p *DFNSWalletProvider) getUserAndLoginInfo(userID string) (*dbmodels.User,
 		return nil, nil, fmt.Errorf("failed to retrieve user %s from DB: %w", userID, err)
 	}
 	if !sender.IsActive {
-		return nil, nil, fmt.Errorf("user %s is not activated", userID)
+		return nil, nil, errors.New(constants.InactiveUser + userID)
 	}
 
 	loginInfo, err := APIClient[models.LoginToken](map[string]string{"username": sender.Name}, "POST", constants.DelegatedLoginURL, nil)
@@ -90,9 +91,9 @@ func createTransferRequest(amount string, denom string, recipient string) (model
 
 // handleTransactionChallenge manages the challenge process
 func (p *DFNSWalletProvider) handleTransactionChallenge(
-	request models.InitTransferRequest, senderWallet dbmodels.Wallet, recipient, authToken string,
+	request models.InitTransferRequest, senderWallet dbmodels.Wallet, recipient, amount, authToken string,
 ) (*dbmodels.InflightTransaction, error) {
-	log.Printf("[INFO] Creating transfer request for %s %s to %s", request.Amount, request.Denom, recipient)
+	log.Printf("[INFO] Creating transfer request for %s %s to %s", amount, request.Denom, recipient)
 
 	// Extract sender wallet ID
 	var senderWalletInfo models.DFNSWalletResponse
@@ -100,7 +101,7 @@ func (p *DFNSWalletProvider) handleTransactionChallenge(
 	senderWalletID := senderWalletInfo.ID
 
 	// Create transaction request
-	txRequest, err := createTransferRequest(request.Amount, request.Denom, recipient)
+	txRequest, err := createTransferRequest(amount, request.Denom, recipient)
 	if err != nil {
 		return nil, err
 	}

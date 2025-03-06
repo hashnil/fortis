@@ -2,6 +2,7 @@ package dfns
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"fortis/entity/constants"
 	"fortis/entity/models"
@@ -22,6 +23,11 @@ func (p *DFNSWalletProvider) CreateWallet(request models.WalletRequest) (*models
 	dbUser, err := p.dbClient.FindUserByID(request.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve user %s from DB: %w", request.UserID, err)
+	}
+
+	// If user is not active, return an error
+	if !dbUser.IsActive {
+		return nil, errors.New(constants.InactiveUser + dbUser.ID)
 	}
 
 	// Iterate over configured networks and create/fetch wallets
@@ -51,6 +57,7 @@ func (p *DFNSWalletProvider) createOrFetchWallet(dbUser dbmodels.User, network s
 	wallet, err := p.dbClient.FindWalletByNameAndNetwork(dbUser.Name, constants.DFNS, network)
 	if err == nil {
 		// Wallet already exists, return it
+		log.Printf("[INFO] createOrFetchWallet: Wallet already exists for User: %s, Network: %s\n", dbUser.Name, network)
 		return &wallet, nil
 	} else if err != gorm.ErrRecordNotFound {
 		// Return if any error other than "wallet not found" occurs

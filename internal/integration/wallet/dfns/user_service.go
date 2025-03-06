@@ -39,7 +39,7 @@ func (p *DFNSWalletProvider) registerOrFetchUser(request models.CreateUserReques
 	}
 
 	if err == nil && user.IsActive {
-		return nil, errors.New(constants.DuplicateUser)
+		return nil, errors.New(constants.DuplicateUser + user.ID)
 	}
 
 	// Constrcut user object
@@ -112,7 +112,7 @@ func (p *DFNSWalletProvider) ActivateDelegatedUser(request models.ActivateUserRe
 
 	// If user is already active, return an error
 	if user.IsActive {
-		return errors.New(constants.DuplicateUser)
+		return errors.New(constants.DuplicateUser + user.ID)
 	}
 
 	// Parse user metadata to extract DFNS registration details

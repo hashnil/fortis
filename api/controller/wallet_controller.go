@@ -149,8 +149,13 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	// Create wallet for the user
 	walletResponse, err := walletProvider.CreateWallet(requestBody)
 	if err != nil {
-		utils.HandleError(ctx, http.StatusInternalServerError,
-			constants.ErrCreateWallet, constants.ErrCreateWallet, err, constants.CreateWalletHandlerV1, startTime)
+		status := http.StatusInternalServerError
+		errMsg := constants.ErrCreateWallet
+		if strings.Contains(err.Error(), constants.InactiveUser) {
+			status = http.StatusNotFound
+			errMsg = constants.ErrInactiveUser
+		}
+		utils.HandleError(ctx, status, errMsg, errMsg, err, constants.CreateWalletHandlerV1, startTime)
 		return
 	}
 
