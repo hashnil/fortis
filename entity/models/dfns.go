@@ -98,11 +98,12 @@ type DFNSWalletResponse struct {
 
 // DFNSTransactionRequest represents the request payload for initiating a blockchain transaction.
 type DFNSTransactionRequest struct {
-	Kind     string `json:"kind"`
-	Contract string `json:"contract,omitempty"` // From account for EVM chains
-	Mint     string `json:"mint,omitempty"`     // From account for Solana chain
-	To       string `json:"to"`
-	Amount   string `json:"amount"`
+	Kind      string `json:"kind"`
+	Contract  string `json:"contract,omitempty"` // From account for EVM chains
+	Mint      string `json:"mint,omitempty"`     // From account for Solana chain
+	To        string `json:"to"`
+	Amount    string `json:"amount"`
+	CreateATA bool   `json:"createDestinationAccount,omitempty"` // Is used to create AssociatedTokenAccount for Spl
 }
 
 // DFNSTransactionResponse represents the response received after processing a transaction.
@@ -180,27 +181,22 @@ type UserActionSignatureChallengeResponse struct {
 
 // UserActionSigningRequest represents the request payload for completing user action signing.
 type UserActionSigningRequest struct {
-	ChallengeIdentifier string `json:"challengeIdentifier"` // Unique identifier for the challenge
-	FirstFactor         struct {
-		Kind                string `json:"kind"` // Type of credential, e.g., "Fido2"
-		CredentialAssertion struct {
-			CredID            string `json:"credId"`            // Credential ID
-			ClientData        string `json:"clientData"`        // Base64-encoded client data
-			AuthenticatorData string `json:"authenticatorData"` // Base64-encoded authenticator data
-			Signature         string `json:"signature"`         // Digital signature for authentication
-			UserHandle        string `json:"userHandle"`        // User identifier
-		} `json:"credentialAssertion"`
-	} `json:"firstFactor"`
-	SecondFactor struct {
-		Kind                string `json:"kind"` // Type of credential, e.g., "Key"
-		CredentialAssertion struct {
-			CredID            string `json:"credId"`            // Credential ID
-			ClientData        string `json:"clientData"`        // Base64-encoded client data
-			AuthenticatorData string `json:"authenticatorData"` // Base64-encoded authenticator data
-			Signature         string `json:"signature"`         // Digital signature for authentication
-			UserHandle        string `json:"userHandle"`        // User identifier
-		} `json:"credentialAssertion"`
-	} `json:"secondFactor"`
+	ChallengeIdentifier string     `json:"challengeIdentifier"`
+	FirstFactor         AuthFactor `json:"firstFactor"`
+	SecondFactor        AuthFactor `json:"secondFactor,omitempty"`
+}
+
+type CredentialAssertion struct {
+	CredID            string `json:"credId"`            // Credential ID
+	ClientData        string `json:"clientData"`        // Base64-encoded client data
+	AuthenticatorData string `json:"authenticatorData"` // Base64-encoded authenticator data
+	Signature         string `json:"signature"`         // Digital signature for authentication
+	UserHandle        string `json:"userHandle"`        // User identifier
+}
+
+type AuthFactor struct {
+	Kind                string              `json:"kind"`
+	CredentialAssertion CredentialAssertion `json:"credentialAssertion"`
 }
 
 // UserActionSigningResponse gets the user action signature

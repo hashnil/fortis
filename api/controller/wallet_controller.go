@@ -53,6 +53,11 @@ func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
 		return
 	}
 
+	// Extract user_id from the Gin context
+	userID, _ := ctx.Get("user_id")
+	requestBody.UserID = constants.UserPrefix + userID.(string)
+	log.Printf("[CreateDelegatedUserV1] Incoming request: %+v", requestBody)
+
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)
 	if err != nil {
@@ -96,6 +101,11 @@ func (c *WalletController) ActivateUserV1(ctx *gin.Context) {
 		return
 	}
 
+	// Extract user_id from the Gin context
+	userID, _ := ctx.Get("user_id")
+	requestBody.UserID = constants.UserPrefix + userID.(string)
+	log.Printf("[ActivateUserV1] Incoming request: %+v", requestBody)
+
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)
 	if err != nil {
@@ -103,9 +113,6 @@ func (c *WalletController) ActivateUserV1(ctx *gin.Context) {
 			constants.ErrInvalidProvider, constants.ErrInvalidProvider, err, constants.ActivateUserHandlerV1, startTime)
 		return
 	}
-
-	// TODO: from headers
-	requestBody.UserID = constants.UserPrefix + requestBody.UserID
 
 	// Activate user
 	err = walletProvider.ActivateDelegatedUser(requestBody)
@@ -137,6 +144,11 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	if !utils.BindRequest(ctx, &requestBody, constants.CreateWalletHandlerV1, startTime) {
 		return
 	}
+
+	// Extract user_id from the Gin context
+	userID, _ := ctx.Get("user_id")
+	requestBody.UserID = constants.UserPrefix + userID.(string)
+	log.Printf("[CreateWalletV1] Incoming request: %+v", requestBody)
 
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)
@@ -180,6 +192,11 @@ func (c *WalletController) InitTransferAssetsV1(ctx *gin.Context) {
 		return
 	}
 
+	// Extract user_id from the Gin context
+	userID, _ := ctx.Get("user_id")
+	requestBody.UserID = constants.UserPrefix + userID.(string)
+	log.Printf("[InitTransferAssetsV1] Incoming request: %+v", requestBody)
+
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)
 	if err != nil {
@@ -214,6 +231,11 @@ func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {
 	if !utils.BindRequest(ctx, &requestBody, constants.TransferAssetsHandlerV1, startTime) {
 		return
 	}
+
+	// Extract user_id from the Gin context
+	userID, _ := ctx.Get("user_id")
+	requestBody.UserID = constants.UserPrefix + userID.(string)
+	log.Printf("[TransferAssetsV1] Incoming request: %+v", requestBody)
 
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)

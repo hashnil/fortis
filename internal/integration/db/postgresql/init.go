@@ -26,6 +26,7 @@ func NewPostgresClient() (db.Client, error) {
 		&dbmodel.User{},
 		&dbmodel.Wallet{},
 		&dbmodel.InflightTransaction{},
+		&dbmodel.Transaction{},
 		&dbmodel.TransactionLog{},
 	); err != nil {
 		return &PostgresSQLClient{}, fmt.Errorf("error creating tables: %v", err)

@@ -57,8 +57,8 @@ type InitTransferResponse struct {
 }
 
 type TransferRequest struct {
-	UserID         string                    `json:"user_id,omitempty"` // Identifier for the sender with prefix (e.g., "us-")
-	CredentialInfo map[string]CredentialInfo `json:"credential_info" binding:"required"`
+	UserID         string                      `json:"user_id,omitempty"` // Identifier for the sender with prefix (e.g., "us-")
+	CredentialInfo map[string][]CredentialInfo `json:"credential_info" binding:"required"`
 }
 
 type TransferResponse struct {

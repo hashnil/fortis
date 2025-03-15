@@ -17,10 +17,12 @@ db:
     pool_size: 10
 wallet:
   dfns:
-    app_id: "ap-3emun-drtc8-9oo0c42rsvf938n"
-    auth_token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.eyJpc3MiOiJhdXRoLmRmbnMuaW8iLCJhdWQiOiJkZm5zOmF1dGg6dXNlciIsInN1YiI6Im9yLTRhdXR1LTJlbTNzLThsY3EyNWRxbDgzZ2U3bnUiLCJqdGkiOiJ0by00bm9rci0xM2Q4Yy05b2JyYTlmM3FraW5lY2c2IiwiaHR0cHM6Ly9jdXN0b20vdXNlcm5hbWUiOiJTZXJ2aWNlIEFjY291bnQiLCJodHRwczovL2N1c3RvbS9hcHBfbWV0YWRhdGEiOnsidXNlcklkIjoidXMtMXJtajAta29ucDItOGswYWplaTlpMzl0YzdlbyIsIm9yZ0lkIjoib3ItNGF1dHUtMmVtM3MtOGxjcTI1ZHFsODNnZTdudSIsInRva2VuS2luZCI6IlNlcnZpY2VBY2NvdW50In0sImlhdCI6MTczODc3OTIxNSwiZXhwIjoxODAxODUxMjE1fQ.Gz2qu5d4J_Hi9JG4jjqN3qW6GOe-J2Ct3nc3vFmFetX_JHvGpHzwYmDM-Dw71ix6Z7EKhut6yGeE6aEhnQpVCA"
+    app_id: "ap-7rr5q-krk84-9rcolaii2e66vmno"
+    auth_token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.eyJpc3MiOiJhdXRoLmRmbnMuaW8iLCJhdWQiOiJkZm5zOmF1dGg6dXNlciIsInN1YiI6Im9yLTE3MDIwLTEwaXNhLTk5NWIzMjZrMjY1NWpsaW0iLCJqdGkiOiJ0by03NHQ2ai0zbzI5ci04c2tycWw5NmNldmNobzVsIiwiaHR0cHM6Ly9jdXN0b20vdXNlcm5hbWUiOiJMb2NhbCB0ZXN0IGFjY291bnQiLCJodHRwczovL2N1c3RvbS9hcHBfbWV0YWRhdGEiOnsidXNlcklkIjoidXMtNmxoMmctdHFqYzctODhtcDdudms2YmNhdmFwbCIsIm9yZ0lkIjoib3ItMTcwMjAtMTBpc2EtOTk1YjMyNmsyNjU1amxpbSIsInRva2VuS2luZCI6IlNlcnZpY2VBY2NvdW50In0sImlhdCI6MTc0MTg2Mjc2OSwiZXhwIjoxODA0OTM0NzY5fQ.utryF2zQFGwfJkIM3V4e01h-zMevA6BacDMgiRxDmOl0XufRwiGsnXaj3nFyLG9KW803f0fZVeYNUzhTMeCvAg"
     base_url: "https://api.dfns.io"
-    credential_id: "Y2ktNHFyZm4tOHZtbTctODFtcG1odjdlMGVkcG9paA"
+    credential_id: "Y2ktNHZpdWMtYTNmZzQtOW80bzdxYTd2Z3FqN2o0Yw"
+    webhook:
+      url: "https://9336-115-98-234-8.ngrok-free.app/webhook"
     networks:
       - "SolanaDevnet"
       - "BaseSepolia"
@@ -31,7 +33,7 @@ wallet:
       usdc: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
       usdt: "EJwZgeZrdC8TXTQbQBoL6bfuAnFUUy1PVCMB4DYPzVaS"
   fees:
-    address: "6FQF5kbQNimCbyCL38jXwHgdKfaXsS5YPbu9f5fmk4Q2"
+    address: "DoL3hh3fcAh6Eynr18YnucfnHPEFLj63XSPMmTnzrCUW"
 auth:
   nonce:
     expiry: 120 # In seconds (2 minutes)

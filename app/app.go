@@ -1,14 +1,18 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
+	"github.com/getpanda/commons/db/redis"
+	"github.com/getpanda/commons/pkg/auth/core"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 
 	"fortis/api/controller"
 	"fortis/entity/constants"
+	"fortis/infrastructure/config"
 	"fortis/infrastructure/factory"
 	"fortis/internal/instrumentation"
 )
@@ -20,6 +24,8 @@ type Service struct {
 var (
 	engineLock sync.RWMutex // Mutex for ensuring thread-safe engine initialization
 	engine     *gin.Engine  // Singleton instance of the Gin engine
+
+	authMiddleware *core.AuthMiddleware // Used for JWT & Nonce authentication
 )
 
 // NewService initializes the Service struct, sets up the Gin engine, and registers routes.
@@ -30,9 +36,24 @@ func NewService() (*Service, error) {
 		return &Service{}, fmt.Errorf("failed to initialize postgres client: %w", err)
 	}
 
+	// Initialize redis client
+	redisClient, err := redis.InitRedisClient(context.Background(), viper.GetInt("db.redis.index"), viper.GetInt("db.redis.pool_size"))
+	if err != nil {
+		return &Service{}, fmt.Errorf("failed to initialize redis client: %v", err)
+	}
+
 	// Start prometheus server
 	instrumentation.StartPrometheusServer()
 
+	// Initialize JWT and Nonce validators
+	jwtValidator := core.NewJWTValidator(string(config.JWT_SECRET))
+	nonceValidator, err := core.NewNonceValidator(redisClient, string(config.NONCE_SECRET))
+	if err != nil {
+		return &Service{}, fmt.Errorf("unable to create nonce validator: %v", err)
+	}
+	authMiddleware = core.NewAuthMiddleware(jwtValidator, nonceValidator)
+
+	// Initialize controllers
 	healthController := controller.NewHealthController()
 	walletController, err := controller.NewWalletController(dbClient)
 	if err != nil {

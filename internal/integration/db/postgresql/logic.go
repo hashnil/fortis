@@ -1,6 +1,7 @@
 package postgresql
 
 import (
+	"fmt"
 	"fortis/internal/integration/db/models"
 )
 
@@ -43,6 +44,23 @@ func (db *PostgresSQLClient) GetInflightTransaction(challenge string) (models.In
 	var inflightTransaction models.InflightTransaction
 	err := db.client.First(&inflightTransaction, "challenge = ?", challenge).Error
 	return inflightTransaction, err
+}
+
+// DeleteInflightTransaction deletes inflight transaction record.
+func (db *PostgresSQLClient) DeleteInflightTransaction(challenge string) error {
+	result := db.client.Where("challenge = ?", challenge).Delete(&models.InflightTransaction{})
+	if result.Error != nil {
+		return fmt.Errorf("error deleting inflight transaction: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no inflight transaction found for challenge: %s", challenge)
+	}
+	return nil
+}
+
+// CreateTransaction stores a transaction entry.
+func (db *PostgresSQLClient) CreateTransaction(transaction models.Transaction) error {
+	return db.client.Create(&transaction).Error
 }
 
 // CreateTransactionLog stores a transaction log entry.

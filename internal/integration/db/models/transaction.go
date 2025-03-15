@@ -24,6 +24,28 @@ func (InflightTransaction) TableName() string {
 	return "inflight_transactions"
 }
 
+type Transaction struct {
+	TxHash          string         `gorm:"column:tx_hash;type:varchar(255);primaryKey"`
+	SenderName      string         `gorm:"column:sender_name;type:varchar(50);not null"`
+	SenderAddress   string         `gorm:"column:sender_address;type:varchar(255);not null"`
+	ReceiverName    string         `gorm:"column:receiver_name;type:varchar(50);not null"`
+	ReceiverAddress string         `gorm:"column:receiver_address;type:varchar(255);not null"`
+	Amount          string         `gorm:"column:amount;type:varchar(50);not null"`
+	Denom           string         `gorm:"column:denom;type:varchar(50);not null"`
+	Provider        string         `gorm:"column:provider;type:varchar(50);not null"`
+	Network         string         `gorm:"column:network;type:varchar(50);not null"`
+	TypeFee         bool           `gorm:"column:type_fee;type:bool"`
+	Status          string         `gorm:"column:status;type:varchar(50);not null"`
+	UTR             string         `gorm:"column:utr;type:varchar(255);not null"`
+	CreatedAt       time.Time      `gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt       time.Time      `gorm:"column:updated_at;autoUpdateTime"`
+	DeletedAt       gorm.DeletedAt `gorm:"column:deleted_at;index"`
+}
+
+func (Transaction) TableName() string {
+	return "transactions"
+}
+
 type TransactionLog struct {
 	ID              string    `gorm:"column:id;type:varchar(50);primaryKey"`
 	SenderName      string    `gorm:"column:sender_name;type:varchar(50);not null"`
@@ -34,9 +56,9 @@ type TransactionLog struct {
 	Denom           string    `gorm:"column:denom;type:varchar(50);not null"`
 	Provider        string    `gorm:"column:provider;type:varchar(50);not null"`
 	Network         string    `gorm:"column:network;type:varchar(50);not null"`
-	TypeFee         bool      `gorm:"column:type_fee;type:bool;default:false"`
+	TypeFee         bool      `gorm:"column:type_fee;type:bool"`
 	Status          string    `gorm:"column:status;type:varchar(50);not null"`
-	FailureReason   string    `gorm:"column:failure_reason;type:varchar(1024)"`
+	FailureReason   string    `gorm:"column:failure_reason;type:varchar(1024)"` // TODO: how to check
 	TxHash          string    `gorm:"column:tx_hash;type:varchar(255)"`
 	UTR             string    `gorm:"column:utr;type:varchar(255);not null"`
 	TxMeta          []byte    `gorm:"column:tx_meta;type:jsonb"`

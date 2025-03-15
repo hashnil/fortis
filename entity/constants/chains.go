@@ -5,6 +5,10 @@ const (
 	UserPrefix   = "us-"
 	WalletPrefix = "wa-"
 
+	// TODO: Chain ID's
+	Solana = "SolanaDevnet"
+	Base   = "BaseSepolia"
+
 	// DFNS API's
 	DelegatedRegistrationURL        = "/auth/registration/delegated"
 	DelegatedRegistrationRestartURL = "/auth/registration/delegated/restart"

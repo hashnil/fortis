@@ -1,7 +1,6 @@
 package dfns
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"fortis/entity/constants"
@@ -117,9 +116,7 @@ func (p *DFNSWalletProvider) ActivateDelegatedUser(request models.ActivateUserRe
 
 	// Parse user metadata to extract DFNS registration details
 	var dfnsUser models.DFNSUserRegistrationResponse
-	if err := json.Unmarshal(user.Metadata, &dfnsUser); err != nil {
-		return fmt.Errorf("failed to unmarshal DFNS user metadata: %w", err)
-	}
+	utils.UnmarshalFromJSON(user.Metadata, &dfnsUser)
 
 	// Complete user registration using provided credentials and temporary authentication token
 	_, err = p.completeUserRegistration(request.CredentialInfo, dfnsUser.TemporaryAuthenticationToken)
@@ -183,6 +180,7 @@ func (p *DFNSWalletProvider) completeUserRegistration(
 			},
 		}
 
+		// TODO: remove if not required
 		requestPayload["secondFactorCredential"] = map[string]interface{}{
 			"credentialKind": secondFactor.CredentialKind,
 			"credentialInfo": map[string]string{

@@ -14,8 +14,12 @@ type Client interface {
 	CreateUser(models.User) error
 	CreateWallet(models.Wallet) error
 	CreateInflightTransaction(models.InflightTransaction) error
+	CreateTransaction(models.Transaction) error
 	CreateTransactionLog(models.TransactionLog) error
 
 	// Update requests
 	UpdateUser(models.User) error
+
+	// Delete requests
+	DeleteInflightTransaction(string) error
 }

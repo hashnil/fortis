@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"fortis/entity/constants"
 	"fortis/infrastructure/config"
+	"fortis/pkg/utils"
 	"io"
 	"net/http"
 	"sync"
@@ -85,11 +86,7 @@ func APIClient[T any](request interface{}, httpMethod, URL string, userAuthToken
 	// Prepare request body if applicable
 	var requestBody io.Reader
 	if httpMethod == http.MethodPost && request != nil {
-		jsonData, err := json.Marshal(request)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling JSON: %w", err)
-		}
-		requestBody = bytes.NewBuffer(jsonData)
+		requestBody = bytes.NewBuffer(utils.MarshalToJSON(request))
 	}
 
 	// Create HTTP request

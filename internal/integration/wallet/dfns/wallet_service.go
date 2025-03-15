@@ -1,7 +1,6 @@
 package dfns
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"fortis/entity/constants"
@@ -69,9 +68,7 @@ func (p *DFNSWalletProvider) createOrFetchWallet(dbUser dbmodels.User, network s
 
 	// Extract DFNS user details from stored metadata
 	var userResponse models.DFNSUserRegistrationResponse
-	if err := json.Unmarshal(dbUser.Metadata, &userResponse); err != nil {
-		return nil, fmt.Errorf("failed to parse user metadata: %w", err)
-	}
+	utils.UnmarshalFromJSON(dbUser.Metadata, &userResponse)
 
 	// Construct wallet creation request for DFNS
 	walletRequest := &models.DFNSWalletRequest{
