@@ -9,6 +9,7 @@ type Client interface {
 	FindUserByID(userID string) (models.User, error)
 	FindWalletByNameAndNetwork(username, provider, network string) (models.Wallet, error)
 	GetInflightTransaction(challenge string) (models.InflightTransaction, error)
+	GetTransaction(txHash string) (models.Transaction, error)
 
 	// Create requests
 	CreateUser(models.User) error
@@ -22,4 +23,5 @@ type Client interface {
 
 	// Delete requests
 	DeleteInflightTransaction(string) error
+	DeleteTransaction(string) error
 }

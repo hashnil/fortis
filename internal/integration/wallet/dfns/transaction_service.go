@@ -81,12 +81,26 @@ func createTransferRequest(amount string, denom string, recipient string) (model
 		return models.DFNSTransactionRequest{}, fmt.Errorf("failed to convert amount to smallest unit: %w", err)
 	}
 
-	return models.DFNSTransactionRequest{
+	// Initialize the base transaction request with essential details.
+	transferRequest := models.DFNSTransactionRequest{
 		Kind:   viper.GetString("wallet.dfns.asset_transfer.native_token"),
-		Mint:   viper.GetString(fmt.Sprintf("wallet.dfns.mint_address.%s", strings.ToLower(denom))),
 		To:     recipient,
 		Amount: smallestAmount,
-	}, nil
+	}
+
+	// Determine the primary blockchain network and configure additional fields accordingly.
+	primaryNetwork := viper.GetString("wallet.dfns.asset_transfer.primary_network")
+
+	if primaryNetwork == constants.Solana {
+		// Assign mint address and enable ATA (Associated Token Account) creation for Solana transactions.
+		transferRequest.Mint = viper.GetString(fmt.Sprintf("wallet.dfns.mint_address.%s", strings.ToLower(denom)))
+		transferRequest.CreateATA = true
+	} else if primaryNetwork == constants.Base {
+		// Assign contract address for Base chain transactions. (TODO: test)
+		transferRequest.Contract = viper.GetString(fmt.Sprintf("wallet.dfns.mint_address.%s", strings.ToLower(denom)))
+	}
+
+	return transferRequest, nil
 }
 
 // handleTransactionChallenge manages the challenge process
@@ -139,86 +153,124 @@ func (p *DFNSWalletProvider) handleTransactionChallenge(
 	return inflightTxn, nil
 }
 
+// TODO: refactor
 func (p *DFNSWalletProvider) TransferAssets(request models.TransferRequest) (*models.TransferResponse, error) {
-	// Basis challenge get the inflight transaction from database
-	for challenge, credentials := range request.CredentialInfo {
+	response := models.TransferResponse{Result: constants.SUCCESS}
+	UTR := utils.GenerateUTR()
+
+	for challenge, _ := range request.CredentialInfo {
+		// Fetch the inflight transaction details from DB
 		inflightTx, err := p.dbClient.GetInflightTransaction(challenge)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to fetch inflight transaction for challenge %s: %v", challenge, err)
 		}
 
-		userActionPayload := models.UserActionSigningRequest{
-			ChallengeIdentifier: inflightTx.ChallengeIdentifier,
-			FirstFactor: struct {
-				Kind                string "json:\"kind\""
-				CredentialAssertion struct {
-					CredID            string "json:\"credId\""
-					ClientData        string "json:\"clientData\""
-					AuthenticatorData string "json:\"authenticatorData\""
-					Signature         string "json:\"signature\""
-					UserHandle        string "json:\"userHandle\""
-				} "json:\"credentialAssertion\""
-			}{
-				Kind: credentials.CredentialKind,
-				CredentialAssertion: struct {
-					CredID            string "json:\"credId\""
-					ClientData        string "json:\"clientData\""
-					AuthenticatorData string "json:\"authenticatorData\""
-					Signature         string "json:\"signature\""
-					UserHandle        string "json:\"userHandle\""
-				}{
-					CredID:            credentials.CredentialID,
-					ClientData:        credentials.ClientData,
-					AuthenticatorData: credentials.AttestationData,
-					Signature:         credentials.Signature,
-					UserHandle:        credentials.UserHandle,
-				},
-			},
-		}
+		// TODO: Prepare user action signature payload based on credential type
+		// userActionPayload := models.UserActionSigningRequest{
+		// 	ChallengeIdentifier: inflightTx.ChallengeIdentifier,
+		// }
+
+		// // TODO: Prepare user action signature payload
+		// userActionPayload = models.UserActionSigningRequest{
+		// 	ChallengeIdentifier: inflightTx.ChallengeIdentifier,
+		// 	FirstFactor: models.FirstFactor{
+		// 		Kind: credentials.CredentialKind,
+		// 		CredentialAssertion: models.CredentialAssertion{
+		// 			CredID:            credentials.CredentialID,
+		// 			ClientData:        credentials.ClientData,
+		// 			AuthenticatorData: credentials.AttestationData,
+		// 			Signature:         credentials.Signature,
+		// 			UserHandle:        credentials.UserHandle,
+		// 		},
+		// 	},
+		// }
 
 		// Call user action signature API
-		userActionResponse, err := APIClient[models.UserActionSigningResponse](userActionPayload, "POST", constants.UserActionSignatureChallengeURL, &inflightTx.AuthToken)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initiate user action signature challenge: %w", err)
-		}
+		// _, err = APIClient[models.UserActionSigningResponse](
+		// 	userActionPayload, "POST", constants.UserActionSignatureChallengeURL, &inflightTx.AuthToken,
+		// )
+		// if err != nil {
+		// 	return nil, fmt.Errorf("failed to initiate user action signature challenge for %s: %v", challenge, err)
+		// }
 
+		// Unmarshal data
 		var (
+			initTransferReq models.InitTransferRequest
 			transferRequest models.DFNSTransactionRequest
-			request         models.InitTransferRequest
 			senderWallet    dbmodels.Wallet
 		)
-		utils.UnmarshalFromJSON(inflightTx.RequestPayload, &request)
+		utils.UnmarshalFromJSON(inflightTx.RequestPayload, &initTransferReq)
 		utils.UnmarshalFromJSON(inflightTx.TransferPayload, &transferRequest)
 		utils.UnmarshalFromJSON(inflightTx.SenderInfo, &senderWallet)
 
-		// Call transfer assets API
-		// Broadcast the transaction
-		txResponse, err := APIClient[models.DFNSTransactionResponse](transferRequest, "POST", inflightTx.URL, &userActionResponse.UserAction)
+		// Attempt transaction broadcast
+		txResponse, err := APIClient[models.DFNSTransactionResponse](transferRequest, "POST", inflightTx.URL, nil)
 		if err != nil {
-			return nil, fmt.Errorf("failed to broadcast transaction: %w", err)
+			return nil, fmt.Errorf("failed to broadcast transaction for %s: %w", inflightTx.URL, err)
 		}
 
+		// Identify if this is a fee transaction
+		typeFee, amount := false, initTransferReq.Amount
+		if txResponse.RequestBody.To == viper.GetString("wallet.fees.address") {
+			typeFee, amount = true, initTransferReq.Fee
+		}
+
+		// Populate response for non-fee transactions
+		if !typeFee {
+			response.ReceiverID = initTransferReq.ToAccount
+			response.Amount = initTransferReq.Amount
+			response.Fee = initTransferReq.Fee
+			response.Denom = initTransferReq.Denom
+			response.UTR = UTR // TODO: remove
+			response.TxInfo.ReceiverAddress = txResponse.RequestBody.To
+			response.TxInfo.Network = txResponse.Network
+			response.TxInfo.TxHash = txResponse.TxHash
+		}
+
+		// Create transaction log entry and store in DB
 		transactionLog := dbmodels.TransactionLog{
 			ID:              fmt.Sprintf("tx-%d", time.Now().UnixNano()),
 			SenderName:      senderWallet.Name,
 			SenderAddress:   senderWallet.Address,
-			ReceiverName:    request.ToAccount,
+			ReceiverName:    initTransferReq.ToAccount,
 			ReceiverAddress: txResponse.RequestBody.To,
-			Amount:          request.Amount,
-			Denom:           request.Denom,
+			Amount:          amount,
+			Denom:           initTransferReq.Denom,
 			Provider:        constants.DFNS,
 			Network:         txResponse.Network,
-			TypeFee:         txResponse.Fee != "",
-			Status:          txResponse.Status,
+			TypeFee:         typeFee,
+			Status:          txResponse.Status, // Broadcasted
 			TxHash:          txResponse.TxHash,
+			UTR:             UTR,
 			TxMeta:          utils.MarshalToJSON(txResponse),
-			UTR:             utils.GenerateUTR(),
 		}
 		if err := p.dbClient.CreateTransactionLog(transactionLog); err != nil {
-			return nil, fmt.Errorf("failed to create transaction log before broadcasting the transaction: %w", err)
+			return nil, fmt.Errorf("failed to log transaction: %w", err)
 		}
 
-		fmt.Println("txResponse: ", txResponse)
+		// Insert into transactions table for webhook confirmation
+		transactionEntry := dbmodels.Transaction{
+			TxHash:          txResponse.TxHash,
+			SenderName:      senderWallet.Name,
+			SenderAddress:   senderWallet.Address,
+			ReceiverName:    initTransferReq.ToAccount,
+			ReceiverAddress: txResponse.RequestBody.To,
+			Amount:          amount,
+			Denom:           initTransferReq.Denom,
+			Provider:        constants.DFNS,
+			Network:         txResponse.Network,
+			TypeFee:         typeFee,
+			Status:          txResponse.Status, // Broadcasted
+			UTR:             UTR,
+		}
+		if err := p.dbClient.CreateTransaction(transactionEntry); err != nil {
+			return nil, fmt.Errorf("failed to insert transaction record: %w", err)
+		}
+
+		// Delete inflight transaction after successful broadcast
+		if err := p.dbClient.DeleteInflightTransaction(challenge); err != nil {
+			return nil, fmt.Errorf("failed to delete inflight transaction: %w", err)
+		}
 	}
-	return nil, nil
+	return &response, nil
 }

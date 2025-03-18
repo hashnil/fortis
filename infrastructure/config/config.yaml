@@ -22,7 +22,7 @@ wallet:
     base_url: "https://api.dfns.io"
     credential_id: "Y2ktNHZpdWMtYTNmZzQtOW80bzdxYTd2Z3FqN2o0Yw"
     webhook:
-      url: "https://9336-115-98-234-8.ngrok-free.app/webhook"
+      url: "https://8b04-60-254-0-48.ngrok-free.app/webhook"
     networks:
       - "SolanaDevnet"
       - "BaseSepolia"

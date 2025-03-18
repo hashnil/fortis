@@ -119,7 +119,7 @@ func (p *DFNSWalletProvider) ActivateDelegatedUser(request models.ActivateUserRe
 	utils.UnmarshalFromJSON(user.Metadata, &dfnsUser)
 
 	// Complete user registration using provided credentials and temporary authentication token
-	_, err = p.completeUserRegistration(request.CredentialInfo, dfnsUser.TemporaryAuthenticationToken)
+	_, err = p.completeUserRegistration(request.CredentialInfo, dfnsUser.TemporaryAuthenticationToken, dfnsUser.Challenge)
 	if err != nil {
 		return fmt.Errorf("failed to complete user registration: %w", err)
 	}
@@ -137,7 +137,7 @@ func (p *DFNSWalletProvider) ActivateDelegatedUser(request models.ActivateUserRe
 
 // completeUserRegistration finalizes the registration process by submitting credentials.
 func (p *DFNSWalletProvider) completeUserRegistration(
-	credentials []models.CredentialInfo, tempAuthToken string,
+	credentials []models.CredentialInfo, tempAuthToken, challenge string,
 ) (*models.DFNSCompleteUserRegistrationResponse, error) {
 	// Ensure at least one credential is provided
 	if len(credentials) == 0 || len(credentials) > 2 {
@@ -190,6 +190,9 @@ func (p *DFNSWalletProvider) completeUserRegistration(
 			},
 		}
 	}
+
+	// TODO: remove
+	requestPayload = utils.GetAttestationData(challenge)
 
 	// Call the API to complete registration
 	return APIClient[models.DFNSCompleteUserRegistrationResponse](requestPayload, "POST", "/auth/registration", &tempAuthToken)

@@ -46,7 +46,7 @@ func (db *PostgresSQLClient) GetInflightTransaction(challenge string) (models.In
 	return inflightTransaction, err
 }
 
-// DeleteInflightTransaction deletes inflight transaction record.
+// DeleteInflightTransaction deletes an inflight transaction record.
 func (db *PostgresSQLClient) DeleteInflightTransaction(challenge string) error {
 	result := db.client.Where("challenge = ?", challenge).Delete(&models.InflightTransaction{})
 	if result.Error != nil {
@@ -61,6 +61,25 @@ func (db *PostgresSQLClient) DeleteInflightTransaction(challenge string) error {
 // CreateTransaction stores a transaction entry.
 func (db *PostgresSQLClient) CreateTransaction(transaction models.Transaction) error {
 	return db.client.Create(&transaction).Error
+}
+
+// GetTransaction fetches a transaction by their unique transaction hash.
+func (db *PostgresSQLClient) GetTransaction(txHash string) (models.Transaction, error) {
+	var transaction models.Transaction
+	err := db.client.First(&transaction, "tx_hash = ?", txHash).Error
+	return transaction, err
+}
+
+// DeleteTransaction deletes a transaction record.
+func (db *PostgresSQLClient) DeleteTransaction(txHash string) error {
+	result := db.client.Where("tx_hash = ?", txHash).Delete(&models.Transaction{})
+	if result.Error != nil {
+		return fmt.Errorf("error deleting transaction: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no transaction found for txHash: %s", txHash)
+	}
+	return nil
 }
 
 // CreateTransactionLog stores a transaction log entry.

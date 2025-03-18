@@ -56,7 +56,7 @@ func (c *WalletController) CreateDelegatedUserV1(ctx *gin.Context) {
 	// Extract user_id from the Gin context
 	userID, _ := ctx.Get("user_id")
 	requestBody.UserID = constants.UserPrefix + userID.(string)
-	log.Printf("[CreateDelegatedUserV1] Incoming request: %+v", requestBody)
+	log.Printf("[CreateDelegatedUserV1] Incoming request: %+v\n", requestBody)
 
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)
@@ -104,7 +104,7 @@ func (c *WalletController) ActivateUserV1(ctx *gin.Context) {
 	// Extract user_id from the Gin context
 	userID, _ := ctx.Get("user_id")
 	requestBody.UserID = constants.UserPrefix + userID.(string)
-	log.Printf("[ActivateUserV1] Incoming request: %+v", requestBody)
+	log.Printf("[ActivateUserV1] Incoming request: %+v\n", requestBody)
 
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)
@@ -148,7 +148,7 @@ func (c *WalletController) CreateWalletV1(ctx *gin.Context) {
 	// Extract user_id from the Gin context
 	userID, _ := ctx.Get("user_id")
 	requestBody.UserID = constants.UserPrefix + userID.(string)
-	log.Printf("[CreateWalletV1] Incoming request: %+v", requestBody)
+	log.Printf("[CreateWalletV1] Incoming request: %+v\n", requestBody)
 
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)
@@ -195,7 +195,7 @@ func (c *WalletController) InitTransferAssetsV1(ctx *gin.Context) {
 	// Extract user_id from the Gin context
 	userID, _ := ctx.Get("user_id")
 	requestBody.UserID = constants.UserPrefix + userID.(string)
-	log.Printf("[InitTransferAssetsV1] Incoming request: %+v", requestBody)
+	log.Printf("[InitTransferAssetsV1] Incoming request: %+v\n", requestBody)
 
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)
@@ -235,7 +235,7 @@ func (c *WalletController) TransferAssetsV1(ctx *gin.Context) {
 	// Extract user_id from the Gin context
 	userID, _ := ctx.Get("user_id")
 	requestBody.UserID = constants.UserPrefix + userID.(string)
-	log.Printf("[TransferAssetsV1] Incoming request: %+v", requestBody)
+	log.Printf("[TransferAssetsV1] Incoming request: %+v\n", requestBody)
 
 	// Determine wallet provider
 	walletProvider, err := c.getWalletProvider(ctx)

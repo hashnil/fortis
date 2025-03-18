@@ -74,6 +74,51 @@ type DFNSWebhookResponse struct {
 	Secret      string   `json:"secret"`
 }
 
+// DFNSWebhookTransferResponse represents the structure of a webhook notification
+// received when a wallet transfer is confirmed or failed.
+type DFNSWebhookTransferResponse struct {
+	ID   string    `json:"id"`
+	Date time.Time `json:"date"`
+	Kind string    `json:"kind"`
+	Data struct {
+		TransferRequest struct {
+			Requester struct {
+				UserID string `json:"userId"`
+				AppID  string `json:"appId"`
+			} `json:"requester"`
+			WalletID string `json:"walletId"`
+			Metadata struct {
+				Asset struct {
+					Symbol   string `json:"symbol"`
+					Decimals int    `json:"decimals"`
+				} `json:"asset"`
+			} `json:"metadata"`
+			RequestBody struct {
+				CreateDestinationAccount bool   `json:"createDestinationAccount"`
+				Mint                     string `json:"mint"`
+				Amount                   string `json:"amount"`
+				To                       string `json:"to"`
+				Kind                     string `json:"kind"`
+			} `json:"requestBody"`
+			Fee             string    `json:"fee"`
+			DateRequested   time.Time `json:"dateRequested"`
+			DateBroadcasted time.Time `json:"dateBroadcasted"`
+			ID              string    `json:"id"`
+			DateConfirmed   time.Time `json:"dateConfirmed"`
+			TxHash          string    `json:"txHash"`
+			Network         string    `json:"network"`
+			Status          string    `json:"status"`
+		} `json:"transferRequest"`
+	} `json:"data"`
+	Status          int       `json:"status"`
+	TimestampSent   int64     `json:"timestampSent"`
+	DeliveryAttempt int       `json:"deliveryAttempt"`
+	DeliveryFailed  bool      `json:"deliveryFailed"`
+	Error           string    `json:"error"`
+	RetryOf         string    `json:"retryOf"`
+	NextAttemptDate time.Time `json:"nextAttemptDate"`
+}
+
 // DFNSWalletRequest represents the request structure for creating a new wallet in DFNS.
 type DFNSWalletRequest struct {
 	Network    string `json:"network"`
