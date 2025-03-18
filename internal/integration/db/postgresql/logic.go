@@ -63,6 +63,7 @@ func (db *PostgresSQLClient) CreateTransaction(transaction models.Transaction) e
 	return db.client.Create(&transaction).Error
 }
 
+// TODO: deleted_at check
 // GetTransaction fetches a transaction by their unique transaction hash.
 func (db *PostgresSQLClient) GetTransaction(txHash string) (models.Transaction, error) {
 	var transaction models.Transaction
